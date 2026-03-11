@@ -121,14 +121,14 @@ async function callChat({ baseUrl, apiKey, model, systemPrompt, userText }) {
   const payload = {
     model,
     temperature: 0,
-    max_tokens: 6000,
+    max_tokens: 2500,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userText }
     ]
   };
 
-  const maxAttempts = 6;
+  const maxAttempts = 10;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const res = await fetch(url, {
       method: 'POST',
@@ -145,7 +145,8 @@ async function callChat({ baseUrl, apiKey, model, systemPrompt, userText }) {
     if (!res.ok) {
       const retryable = [429, 500, 502, 503, 504].includes(res.status);
       if (retryable && attempt < maxAttempts) {
-        const backoff = Math.min(15000, 400 * (2 ** (attempt - 1))) + Math.floor(Math.random() * 250);
+        const backoff = Math.min(60000, 1000 * (2 ** (attempt - 1))) + Math.floor(Math.random() * 500);
+        console.error(`retryable HTTP ${res.status} on attempt ${attempt}/${maxAttempts}; sleeping ${backoff}ms`);
         await sleep(backoff);
         continue;
       }
