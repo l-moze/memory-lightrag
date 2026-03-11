@@ -483,6 +483,17 @@ async function queryIndex({ workspace, sandboxDir, indexId, question, topK, path
   const lexScoreById = new Map(lexHits.map(h => [h.id, h.score]));
   const maxLex = Math.max(1, ...lexHits.map(h => h.score || 0));
 
+  // Compute df penalty factors for entities (smooth IDF-like)
+  const entityDf = entities?.entityDf || {};
+  const dfValues = Object.values(entityDf);
+  const avgDf = dfValues.length > 0 ? dfValues.reduce((a, b) => a + b, 0) / dfValues.length : 1.0;
+  const gamma = 1.0; // penalty strength, configurable later
+  const entityPenalty = new Map();
+  for (const [e, df] of Object.entries(entityDf)) {
+    const penalty = 1.0 / (1.0 + gamma * Math.log(1.0 + df / avgDf));
+    entityPenalty.set(e, penalty);
+  }
+
   if (useGraph) {
     const seedIds = new Set(seeds.map(s => s.chunk.chunkId));
 
@@ -492,15 +503,17 @@ async function queryIndex({ workspace, sandboxDir, indexId, question, topK, path
       for (const e of ents) seedEntities.add(e);
     }
 
-    // score candidate chunks by how many seed entities they share
+    // score candidate chunks by how many seed entities they share, with df penalty
     const candScores = new Map();
     const candWhyEntities = new Map(); // cid -> Set(entity)
 
     for (const e of seedEntities) {
+      const penalty = entityPenalty.get(e) || 1.0;
       const chunkIds = entities.entityToChunks[e] || [];
       for (const cid of chunkIds) {
         if (seedIds.has(cid)) continue;
-        candScores.set(cid, (candScores.get(cid) || 0) + 1);
+        // each entity contributes penalty-weighted score
+        candScores.set(cid, (candScores.get(cid) || 0) + penalty);
         if (!candWhyEntities.has(cid)) candWhyEntities.set(cid, new Set());
         candWhyEntities.get(cid).add(e);
       }
@@ -528,6 +541,7 @@ async function queryIndex({ workspace, sandboxDir, indexId, question, topK, path
         const lex = (lexScoreById.get(cid) || 0) / maxLex;
         const whyEnts = [...(candWhyEntities.get(cid) || new Set())];
         const neighborBonus = whyEnts.includes('__neighbor__') ? 0.5 : 0;
+        // shared is already penalty-weighted sum of entity contributions
         const value = shared * 1.0 + lex * 1.2 + neighborBonus;
         const cost = Math.min(2000, (c.text || '').length + 80);
         return { cid, chunk: c, shared, lex, value, cost, whyEnts };

@@ -1,0 +1,27 @@
+{
+  "name": "openclaw-graphrag",
+  "version": "0.1.0",
+  "description": "GraphRAG sidecar for OpenClaw",
+  "main": "cli.js",
+  "bin": {
+    "openclaw-graphrag": "./cli.js"
+  },
+  "scripts": {
+    "test": "node --test __tests__/*.test.js",
+    "test:watch": "node --test --watch __tests__/*.test.js",
+    "lint": "eslint .",
+    "format": "prettier --write '**/*.js'"
+  },
+  "dependencies": {
+    "minisearch": "^6.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": ["rag", "graphrag", "openclaw", "search"],
+  "license": "MIT"
+}
