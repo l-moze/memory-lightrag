@@ -343,6 +343,11 @@ function usage() {
 `);
 }
 
+// Avoid crashing when stdout consumer closes early (e.g., piping to `head`).
+process.stdout.on('error', (err) => {
+  if (err && err.code === 'EPIPE') process.exit(0);
+});
+
 async function main() {
   const argv = process.argv.slice(2);
   const args = parseArgs(argv);
