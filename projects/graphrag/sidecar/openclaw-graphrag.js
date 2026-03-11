@@ -33,6 +33,9 @@ const DEFAULTS = {
 
   // query
   topK: 8,
+
+  // filtering
+  pathContains: null,
 };
 
 // -----------------------------
@@ -288,21 +291,26 @@ async function loadIndex({ workspace, sandboxDir, indexId }) {
   return { manifest, miniSearch, byId };
 }
 
-async function queryIndex({ workspace, sandboxDir, indexId, question, topK }) {
+async function queryIndex({ workspace, sandboxDir, indexId, question, topK, pathContains }) {
   const t0 = Date.now();
   const { manifest, miniSearch, byId } = await loadIndex({ workspace, sandboxDir, indexId });
   const tLoad = Date.now();
 
-  const hits = miniSearch.search(question, { limit: topK });
+  // Search wider then filter; keeps the filtering feature simple.
+  const hits = miniSearch.search(question, { limit: Math.max(topK * 5, topK) });
   const tSearch = Date.now();
 
   const chunks = [];
   const citations = [];
   const contextParts = [];
 
+  const want = (pathContains && String(pathContains).trim()) ? String(pathContains).trim().toLowerCase() : null;
+
   for (const h of hits) {
+    if (chunks.length >= topK) break;
     const c = byId.get(h.id);
     if (!c) continue;
+    if (want && !String(c.path).toLowerCase().includes(want)) continue;
     chunks.push({
       chunkId: c.chunkId,
       path: c.path,
@@ -339,7 +347,7 @@ async function queryIndex({ workspace, sandboxDir, indexId, question, topK }) {
 function usage() {
   console.error(`Usage:
   openclaw-graphrag build [--workspace <path>] [--docsDir <rel>] [--sandboxDir <rel>] [--index <id>]
-  openclaw-graphrag query --question "..." [--topK 8] [--workspace <path>] [--sandboxDir <rel>] [--index <id>] [--format json]
+  openclaw-graphrag query --question "..." [--topK 8] [--pathContains "..."] [--workspace <path>] [--sandboxDir <rel>] [--index <id>] [--format json]
 `);
 }
 
@@ -386,7 +394,14 @@ async function main() {
       process.exit(2);
     }
     const topK = Number(args.topK || DEFAULTS.topK);
-    const out = await queryIndex({ workspace, sandboxDir, indexId, question, topK });
+    const out = await queryIndex({
+      workspace,
+      sandboxDir,
+      indexId,
+      question,
+      topK,
+      pathContains: args.pathContains || DEFAULTS.pathContains,
+    });
     process.stdout.write(JSON.stringify(out, null, 2));
     return;
   }
