@@ -83,12 +83,41 @@ async function ensureDir(p) {
   await fs.mkdir(p, { recursive: true });
 }
 
+function normalizeModelOutput(s) {
+  let out = String(s || '').trim();
+
+  // Common unwanted preambles from smaller models
+  const markers = [
+    'Here is the cleaned Markdown:',
+    'Here\'s the cleaned Markdown:',
+    'Below is the cleaned Markdown:',
+  ];
+  for (const m of markers) {
+    const idx = out.indexOf(m);
+    if (idx !== -1) out = out.slice(idx + m.length).trim();
+  }
+
+  // If model starts with meta talk, drop leading paragraphs until a likely markdown start.
+  // (Keep it conservative.)
+  const lines = out.split(/\r?\n/);
+  let start = 0;
+  while (start < lines.length) {
+    const line = lines[start].trim();
+    if (!line) { start++; continue; }
+    if (/^(#|\*|-|\d+\.|\[|---|[A-Za-z0-9])/u.test(line)) break;
+    start++;
+  }
+  out = lines.slice(start).join('\n').trim();
+
+  return out ? (out.endsWith('\n') ? out : out + '\n') : '';
+}
+
 async function callChat({ baseUrl, apiKey, model, systemPrompt, userText }) {
   const url = baseUrl.replace(/\/$/, '') + '/chat/completions';
   const payload = {
     model,
     temperature: 0,
-    max_tokens: 4000,
+    max_tokens: 6000,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userText }
@@ -111,7 +140,7 @@ async function callChat({ baseUrl, apiKey, model, systemPrompt, userText }) {
   const j = JSON.parse(text);
   const content = j?.choices?.[0]?.message?.content;
   if (!content) throw new Error('No content in response');
-  return content;
+  return normalizeModelOutput(content);
 }
 
 async function main() {
@@ -145,9 +174,10 @@ async function main() {
     const raw = await fs.readFile(fp, 'utf8');
 
     const userText = [
-      'Clean the following Markdown. Return ONLY cleaned Markdown.',
-      '---',
-      raw
+      'CLEAN THIS MARKDOWN INPUT. Output ONLY cleaned Markdown. No preamble.',
+      'INPUT_START',
+      raw,
+      'INPUT_END'
     ].join('\n');
 
     const cleaned = await callChat({ baseUrl, apiKey, model, systemPrompt, userText });
