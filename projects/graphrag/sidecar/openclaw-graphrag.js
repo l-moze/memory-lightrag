@@ -232,6 +232,25 @@ async function buildIndex({ workspace, sandboxDir, indexId, docsDir, maxChunkCha
   // Entity extraction (GraphRAG v0)
   // -----------------------------
   // Minimal, rules-only entity extraction to support 1-hop expansion.
+  // Step2: add denoising + canonicalization.
+  const STOP_ENTITY = new Set([
+    // section boilerplate
+    'introduction','abstract','references','appendix','conclusion','limitations','acknowledgments',
+    'table','figure','dataset','datasets','results','discussion','method','methods','overview',
+    'related work','related-work','implementation details','experimental setup',
+    // overly generic technical terms (too high degree, low value)
+    'rag','llm','gpt','api','nlp','url','openai','acm','ieee','usa'
+  ]);
+
+  function canonicalKey(s) {
+    return String(s || '')
+      .toLowerCase()
+      .replace(/[`"'“”]/g, '')
+      .replace(/[^a-z0-9\/_\-\s\.]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   function normalizeEntity(s) {
     return String(s)
       .trim()
@@ -240,40 +259,53 @@ async function buildIndex({ workspace, sandboxDir, indexId, docsDir, maxChunkCha
       .slice(0, 80);
   }
 
+  function isJunkEntity(name) {
+    const n = String(name || '').trim();
+    if (!n) return true;
+    if (n.length < 3) return true;
+    if (/^\d+(?:\.\d+)*$/.test(n)) return true; // section numbers
+    if (/^(https?:\/\/|www\.)/i.test(n)) return true;
+    const key = canonicalKey(n);
+    if (!key) return true;
+    if (STOP_ENTITY.has(key)) return true;
+    if (key.startsWith('appendix ')) return true;
+    if (key.startsWith('table ')) return true;
+    if (key.startsWith('figure ')) return true;
+    if (key === 'source') return true;
+    if (key.startsWith('input_start') || key.startsWith('input_end')) return true;
+    return false;
+  }
+
   function extractEntities(text) {
-    const ents = new Set();
+    const ents = new Map(); // canonical -> display
     const t = String(text || '');
 
+    const add = (raw) => {
+      const disp = normalizeEntity(raw);
+      if (isJunkEntity(disp)) return;
+      const key = canonicalKey(disp);
+      if (!key) return;
+      // prefer the first seen display form
+      if (!ents.has(key)) ents.set(key, disp);
+    };
+
     // Model-like ids: Foo/Bar-Baz
-    for (const m of t.matchAll(/\b[A-Z][A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]{3,}\b/g)) {
-      ents.add(normalizeEntity(m[0]));
-    }
+    for (const m of t.matchAll(/\b[A-Z][A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]{3,}\b/g)) add(m[0]);
 
     // CamelCase / PascalCase words (GraphRAG, HippoRAG, DeepSeek)
-    for (const m of t.matchAll(/\b[A-Z][a-z]+(?:[A-Z][A-Za-z0-9]+)+\b/g)) {
-      ents.add(normalizeEntity(m[0]));
-    }
+    for (const m of t.matchAll(/\b[A-Z][a-z]+(?:[A-Z][A-Za-z0-9]+)+\b/g)) add(m[0]);
 
     // All-caps tokens length>=3 (RAG, LLM, RAPTOR)
-    for (const m of t.matchAll(/\b[A-Z]{3,}(?:-[A-Z0-9]{2,})?\b/g)) {
-      ents.add(normalizeEntity(m[0]));
-    }
+    for (const m of t.matchAll(/\b[A-Z]{3,}(?:-[A-Z0-9]{2,})?\b/g)) add(m[0]);
 
-    // Headings: take the heading line as a weak entity (first 60 chars)
+    // Headings: treat heading as weak entity but denoise aggressively
     for (const line of t.split(/\r?\n/)) {
       const hm = line.match(/^#{1,6}\s+(.{3,})$/);
-      if (hm) ents.add(normalizeEntity(hm[1].slice(0, 60)));
+      if (hm) add(hm[1].slice(0, 60));
     }
 
-    // Filter obvious junk
-    const out = [...ents]
-      .filter(Boolean)
-      .filter(e => e.length >= 3)
-      .filter(e => !/^source$/i.test(e))
-      .filter(e => !/^input_(start|end)$/i.test(e));
-
     // Cap per chunk
-    return out.slice(0, 50);
+    return [...ents.values()].slice(0, 30);
   }
 
   const entityToChunks = new Map();
@@ -288,10 +320,15 @@ async function buildIndex({ workspace, sandboxDir, indexId, docsDir, maxChunkCha
     }
   }
 
+  // Persist entities with simple stats for debugging/denoising.
+  const entityDf = {};
+  for (const [e, cids] of entityToChunks.entries()) entityDf[e] = cids.length;
+
   const entitiesArtifact = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     builtAt: new Date().toISOString(),
     entityCount: entityToChunks.size,
+    entityDf,
     entityToChunks: Object.fromEntries(entityToChunks),
     chunkToEntities: Object.fromEntries(chunkToEntities),
   };
