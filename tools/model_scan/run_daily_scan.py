@@ -94,7 +94,7 @@ def scan_minimax(date: str) -> tuple[str, dict]:
         "--api-key-env",
         "MINIMAX_API_KEY",
         "--models",
-        "MiniMax-M2.5,MiniMax-M2.5-highspeed",
+        "MiniMax-M2.5",
         "--out",
         str(out),
         "--rank-out",
