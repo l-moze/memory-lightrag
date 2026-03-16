@@ -121,37 +121,46 @@ def main() -> int:
     # Scan minimax
     results.append(scan_minimax(date))
 
-    # Print human-friendly summary (Feishu)
+    # 简约中文摘要（会被 Feishu renderMode=card 渲染成卡片）
     lines = [
-        f"🧪 Daily model scan — {date} UTC",
+        f"🧪 模型扫描日报（UTC {date}）",
     ]
+
+    def provider_label(pid: str) -> str:
+        if pid == "api-925214":
+            return "公益站 api-925214"
+        if pid == "minimax-cn":
+            return "MiniMax"
+        return pid
 
     # Provider status
     for pid, meta in results:
-        status = "✅" if meta["rc"] == 0 else "❌"
-        lines.append(f"{status} {pid} (rc={meta['rc']})")
+        status = "✅" if meta["rc"] == 0 else "⚠️"
+        lines.append(f"{status} {provider_label(pid)}")
         if meta["rc"] != 0:
-            tail = meta["log"].splitlines()[-3:]
+            # keep it short; Feishu card should be clean
+            tail = meta["log"].splitlines()[-1:]
             for ln in tail:
-                lines.append(f"  ↳ {ln}")
+                lines.append(f"  - 原因：{ln[:120]}")
 
-    # OK model highlights
+    # OK model highlights (top)
     def add_rank_line(label: str, rank_path: Path):
         if not rank_path.exists():
             return
         rj = json.loads(rank_path.read_text("utf-8"))
         ranked = rj.get("ranked", [])
-        if ranked:
-            lines.append(f"  • {label} OK: {', '.join(ranked[:8])}")
-        else:
-            lines.append(f"  • {label} OK: (none)")
+        if not ranked:
+            return
+        # only show a few, keep minimal
+        show = ranked[:6]
+        lines.append(f"- {provider_label(label)} 可用模型：{', '.join(show)}")
 
     for p in providers:
         add_rank_line(p["id"], ART / f"{p['id']}-ranked-{date}.json")
 
     add_rank_line("minimax-cn", ART / f"minimax-cn-ranked-{date}.json")
 
-    lines.append(f"Artifacts: {ART}/ (scan + ranked JSON)")
+    lines.append(f"📁 结果目录：{ART}")
 
     print("\n".join(lines))
     return 0
