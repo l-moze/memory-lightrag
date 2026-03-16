@@ -1,0 +1,15 @@
+{
+  "providers": [
+    {
+      "id": "daiju",
+      "name": "Daiju公益/聚合站",
+      "enabled": false,
+      "api": "openai",
+      "baseUrl": "https://api.daiju.live",
+      "apiKeyEnv": "DAIJU_API_KEY",
+      "modelsEndpoint": "blocked",
+      "models": ["gpt-5.2", "gpt-5.2-codex", "kimi-k2.5", "glm-5", "qwen3.5-plus", "llama3.1-8B"],
+      "notes": "OpenAI-compatible, but GET /models appears blocked (Cloudflare 1010). We maintain a manual allowlist here and probe each model via /chat/completions." 
+    }
+  ]
+}
