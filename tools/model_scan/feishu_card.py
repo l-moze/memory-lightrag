@@ -45,53 +45,71 @@ def build_model_scan_card(
     summaries: List[ProviderSummary],
     artifacts_path: str,
 ) -> Dict[str, Any]:
-    # overall status
+    """简约中文日报卡片（schema 2.0）。"""
+
     ok = all(s.rc == 0 for s in summaries)
-    header_color = "green" if ok else "red"
+    # 不要用红色，太刺眼；失败用橙色更舒服
+    header_color = "green" if ok else "orange"
+
+    def name_map(p: str) -> str:
+        if p in ("api-925214", "api.925214", "public", "public-proxy"):
+            return "公益站"
+        if p in ("minimax-cn", "minimax"):
+            return "MiniMax"
+        return p
+
+    def status_icon(rc: int) -> str:
+        return "✅" if rc == 0 else "⚠️"
 
     elements: List[Dict[str, Any]] = []
 
-    # Meta section
-    elements += [
-        {
-            "tag": "div",
-            "text": {
-                "tag": "lark_md",
-                "content": f"**Date (UTC):** `{date_utc}`\n**Artifacts:** `{artifacts_path}`",
-            },
-        },
-        {"tag": "hr"},
-    ]
-
-    # Provider sections
-    for s in summaries:
-        status = "✅" if s.rc == 0 else "❌"
-        ok_models = s.ok_models[:10]
-        ok_text = ", ".join(f"`{m}`" for m in ok_models) if ok_models else "(none)"
-        note = s.note or ""
-        rows = [
-            ("Status", f"{status} rc={s.rc}"),
-            ("OK models", ok_text),
-        ]
-        if note:
-            rows.append(("Note", note))
-
-        elements += [
-            {
-                "tag": "div",
-                "text": {"tag": "lark_md", "content": f"### {s.provider}"},
-            },
-            *_kv_fields(rows),
-            {"tag": "hr"},
-        ]
-
-    # Footer hint
+    # 顶部元信息（尽量短）
     elements.append(
         {
             "tag": "div",
             "text": {
                 "tag": "lark_md",
-                "content": "_Tip: providers behind Cloudflare may require a browser User-Agent; slow models are sampled and capped to keep cron fast._",
+                "content": f"**UTC 日期：** `{date_utc}`\n**结果目录：** `{artifacts_path}`",
+            },
+        }
+    )
+    elements.append({"tag": "hr"})
+
+    # 每个 provider 一块：状态 + 可用模型（Top5）+ 备注（最多一行）
+    for s in summaries:
+        ok_models = s.ok_models[:5]
+        ok_text = "，".join(f"`{m}`" for m in ok_models) if ok_models else "（无）"
+        note = (s.note or "").strip()
+        # 备注最多一行
+        if len(note) > 80:
+            note = note[:80] + "…"
+
+        elements.append(
+            {
+                "tag": "div",
+                "text": {
+                    "tag": "lark_md",
+                    "content": f"### {status_icon(s.rc)} {name_map(s.provider)}",
+                },
+            }
+        )
+
+        rows = [
+            ("状态", "正常" if s.rc == 0 else f"异常（rc={s.rc}）"),
+            ("可用模型", ok_text),
+        ]
+        if note:
+            rows.append(("备注", note))
+        elements.extend(_kv_fields(rows))
+        elements.append({"tag": "hr"})
+
+    # Footer：不写英文提示
+    elements.append(
+        {
+            "tag": "div",
+            "text": {
+                "tag": "lark_md",
+                "content": "_说明：模型探测做了抽样与超时上限，避免定时任务卡死。_",
             },
         }
     )
