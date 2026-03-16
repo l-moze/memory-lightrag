@@ -122,28 +122,47 @@ def main() -> int:
     results.append(scan_minimax(date))
 
     # 简约中文摘要（会被 Feishu renderMode=card 渲染成卡片）
+    # 简约 + 异常报告（无 emoji；依赖 renderMode=card）
     lines = [
-        f"🧪 模型扫描日报（UTC {date}）",
+        f"模型扫描日报 | UTC {date}",
+        "",
     ]
 
     def provider_label(pid: str) -> str:
         if pid == "api-925214":
-            return "公益站 api-925214"
+            return "公益站(api-925214)"
         if pid == "minimax-cn":
             return "MiniMax"
         return pid
 
-    # Provider status
-    for pid, meta in results:
-        status = "✅" if meta["rc"] == 0 else "⚠️"
-        lines.append(f"{status} {provider_label(pid)}")
-        if meta["rc"] != 0:
-            # keep it short; Feishu card should be clean
-            tail = meta["log"].splitlines()[-1:]
-            for ln in tail:
-                lines.append(f"  - 原因：{ln[:120]}")
+    ok_providers: list[str] = []
+    bad_providers: list[tuple[str, str]] = []
 
-    # OK model highlights (top)
+    for pid, meta in results:
+        if meta["rc"] == 0:
+            ok_providers.append(provider_label(pid))
+        else:
+            # 只抓最后一行错误，避免刷屏
+            tail = (meta["log"].splitlines()[-1:] or [""])[0]
+            bad_providers.append((provider_label(pid), tail[:160]))
+
+    if not bad_providers:
+        lines.append("状态：正常")
+        lines.append(f"来源：{', '.join(ok_providers) if ok_providers else '-'}")
+        lines.append("")
+    else:
+        lines.append("状态：有异常")
+        if ok_providers:
+            lines.append(f"正常：{', '.join(ok_providers)}")
+        lines.append("")
+        lines.append("异常详情：")
+        for name, reason in bad_providers:
+            lines.append(f"- {name}")
+            if reason:
+                lines.append(f"  原因：{reason}")
+        lines.append("")
+
+    # 仅在“有异常”时附上可用模型 Top3（便于快速回滚/切换）
     def add_rank_line(label: str, rank_path: Path):
         if not rank_path.exists():
             return
@@ -151,18 +170,18 @@ def main() -> int:
         ranked = rj.get("ranked", [])
         if not ranked:
             return
-        # only show a few, keep minimal
-        show = ranked[:6]
-        lines.append(f"- {provider_label(label)} 可用模型：{', '.join(show)}")
+        show = ranked[:3]
+        lines.append(f"{provider_label(label)} 可用模型：{', '.join(show)}")
 
-    for p in providers:
-        add_rank_line(p["id"], ART / f"{p['id']}-ranked-{date}.json")
+    if bad_providers:
+        for p in providers:
+            add_rank_line(p["id"], ART / f"{p['id']}-ranked-{date}.json")
+        add_rank_line("minimax-cn", ART / f"minimax-cn-ranked-{date}.json")
+        lines.append("")
 
-    add_rank_line("minimax-cn", ART / f"minimax-cn-ranked-{date}.json")
+    lines.append(f"结果目录：{ART}")
 
-    lines.append(f"📁 结果目录：{ART}")
-
-    print("\n".join(lines))
+    print("\n".join(lines).rstrip() + "\n")
     return 0
 
 
