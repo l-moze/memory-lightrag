@@ -117,6 +117,31 @@ Reactions are lightweight social signals. Humans use them constantly — they sa
 
 Skills provide your tools. When you need one, check its `SKILL.md`. Keep local notes (camera names, SSH details, voice preferences) in `TOOLS.md`.
 
+## Director Reliability Guardrails
+
+When the upstream model/provider is unstable (403/429/502/timeouts), optimize for fast recovery and minimal user friction.
+
+### P1 - Minimal observability
+
+- Use `scripts/director-failview.sh` for a quick local diagnosis snapshot.
+- Default command:
+  - `scripts/director-failview.sh /tmp/openclaw/openclaw-$(date -u +%F).log 5000`
+- Always report:
+  - top failure buckets (blocked/rate-limit/timeout),
+  - whether failures are concentrated on `agent:director:main`,
+  - latest timestamp window.
+
+### P2 - Response behavior under failures
+
+- Do **not** send repeated near-identical replies.
+- On a 403/rate-limit incident, return a single concise actionable response with:
+  1. what failed (provider blocked/limited),
+  2. one immediate next step,
+  3. one fallback step if first step fails.
+- Avoid open-ended follow-up loops ("贴更多日志" repeatedly) unless the previous requested check was completed and insufficient.
+- Prefer deterministic next actions over generic advice.
+- If user message is duplicate/noisy, acknowledge once and avoid duplicate multi-replies.
+
 **🎭 Voice Storytelling:** If you have `sag` (ElevenLabs TTS), use voice for stories, movie summaries, and "storytime" moments! Way more engaging than walls of text. Surprise people with funny voices.
 
 **📝 Platform Formatting:**
