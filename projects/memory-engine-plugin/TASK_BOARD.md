@@ -70,6 +70,13 @@ Inbox -> Assigned -> In Progress -> Review -> Done
 - Output: `T6_QA_TASK.md`
 
 #### T6-Review Director 评审
-- State: Done (Conditional Pass)
+- State: Done (Go)
 - Output: `T6_DIRECTOR_REVIEW.md`
-- Decision: **No-Go until P0 fixes complete**
+- Decision: **Go（P0 已补齐，可进入 v1 编码）**
+
+#### T6-P0 补齐任务
+- State: Done
+- Outputs:
+  - `T6_COMPAT_MATRIX.md`
+  - `T6_ENDPOINT_PROFILE.md`
+  - `T6_CLI_CONTRACT.md`

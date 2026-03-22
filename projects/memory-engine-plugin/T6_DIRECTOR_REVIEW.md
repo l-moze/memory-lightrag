@@ -68,6 +68,11 @@ Inputs:
 
 ---
 
+## P0 Completion Update
+已补齐：
+- `T6_COMPAT_MATRIX.md`
+- `T6_ENDPOINT_PROFILE.md`
+- `T6_CLI_CONTRACT.md`
+
 ## Go/No-Go
-- **Current**: No-Go（未完成 P0）
-- **After P0 fixes**: Go（进入 v1 插件骨架编码）
+- **Current**: Go（P0 已完成，可进入 v1 插件骨架编码）
