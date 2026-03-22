@@ -87,13 +87,17 @@ Inbox -> Assigned -> In Progress -> Review -> Done
 - Scope: `status` + `search` + `fallback`
 
 #### T7-A 实现任务（Scaffold Agent）
-- State: Assigned
+- State: Done
 - Output: `T7_IMPLEMENTATION_NOTES.md` + initial file tree changes
 
 #### T7-B 适配任务（Adapter Agent）
-- State: Assigned
+- State: Done
 - Output: `T7_ADAPTER_MAPPING_FINAL.md`
 
 #### T7-C 验证任务（QA Agent）
-- State: Assigned
+- State: Done
 - Output: `T7_QA_EXEC_PLAN.md`
+
+#### T7-D v1 插件骨架编码
+- State: In Progress
+- Output: `memory-lightrag/` scaffold files (`openclaw.plugin.json`, `src/index.ts`, config/adapter/policy/fallback/types)
