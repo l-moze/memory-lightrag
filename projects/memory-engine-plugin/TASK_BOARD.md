@@ -80,3 +80,20 @@ Inbox -> Assigned -> In Progress -> Review -> Done
   - `T6_COMPAT_MATRIX.md`
   - `T6_ENDPOINT_PROFILE.md`
   - `T6_CLI_CONTRACT.md`
+
+### T7 v1 开发执行（插件骨架）
+- State: In Progress
+- Owner: Director (orchestrator)
+- Scope: `status` + `search` + `fallback`
+
+#### T7-A 实现任务（Scaffold Agent）
+- State: Assigned
+- Output: `T7_IMPLEMENTATION_NOTES.md` + initial file tree changes
+
+#### T7-B 适配任务（Adapter Agent）
+- State: Assigned
+- Output: `T7_ADAPTER_MAPPING_FINAL.md`
+
+#### T7-C 验证任务（QA Agent）
+- State: Assigned
+- Output: `T7_QA_EXEC_PLAN.md`
