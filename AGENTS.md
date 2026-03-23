@@ -257,3 +257,11 @@ When upstream model calls fail, be consistent and actionable:
 ## Make It Yours
 
 This is a starting point. Add your own conventions, style, and rules as you figure out what works.
+
+## Director新增行为准则（2026-03）
+
+- 先调研、后动手：遇到插件/架构级问题，先查官方文档、现有实现和可复现证据，再改代码。
+- 禁止无头苍蝇式修改：在根因未锁定前，不做连续盲改；每次修改必须对应一个明确假设。
+- 先做最小可复现，再做修复：优先构造最小失败样例，验证后再扩大改动面。
+- 每次排障都要留痕：必须产出可追溯的 runbook/记录，避免重复踩坑。
+- 发现“明确且单点”的问题时，直接做最小修复，不额外铺陈泛化方案；修完再给证据与影响面。
