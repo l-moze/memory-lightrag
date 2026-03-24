@@ -3,29 +3,47 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_ENV = '/home/node/.openclaw/.env';
+const DEFAULT_POLICY = '/home/node/.openclaw/envsafe-policy.json';
 const KEY_RE = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/;
 const STRICT_KEY_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 function parseArgs(argv) {
   const out = {
     file: DEFAULT_ENV,
+    policy: DEFAULT_POLICY,
+    profile: '',
     backupKeep: 20,
     backupTtlDays: 7,
     lockTimeoutMs: 5000,
     dedupe: 'keep-last',
+    requireStdin: true,
+    allowArgv: false,
+    protectedKeys: [],
+    requiredProfiles: {},
+    defaultProfile: '',
     _: [],
+    __explicit: new Set(),
   };
+
+  function setOpt(k, v = true) {
+    out[k] = v;
+    out.__explicit.add(k);
+  }
+
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--file') out.file = argv[++i];
-    else if (a === '--stdin') out.stdin = true;
-    else if (a === '--allow-argv') out.allowArgv = true;
-    else if (a === '--if-missing') out.ifMissing = true;
-    else if (a === '--dry-run') out.dryRun = true;
-    else if (a === '--backup-keep') out.backupKeep = Number(argv[++i]);
-    else if (a === '--backup-ttl-days') out.backupTtlDays = Number(argv[++i]);
-    else if (a === '--lock-timeout-ms') out.lockTimeoutMs = Number(argv[++i]);
-    else if (a === '--dedupe') out.dedupe = argv[++i] || 'keep-last';
+    if (a === '--file') setOpt('file', argv[++i]);
+    else if (a === '--policy') setOpt('policy', argv[++i]);
+    else if (a === '--profile') setOpt('profile', argv[++i]);
+    else if (a === '--stdin') setOpt('stdin', true);
+    else if (a === '--allow-argv') setOpt('allowArgv', true);
+    else if (a === '--if-missing') setOpt('ifMissing', true);
+    else if (a === '--dry-run') setOpt('dryRun', true);
+    else if (a === '--force') setOpt('force', true);
+    else if (a === '--backup-keep') setOpt('backupKeep', Number(argv[++i]));
+    else if (a === '--backup-ttl-days') setOpt('backupTtlDays', Number(argv[++i]));
+    else if (a === '--lock-timeout-ms') setOpt('lockTimeoutMs', Number(argv[++i]));
+    else if (a === '--dedupe') setOpt('dedupe', argv[++i] || 'keep-last');
     else out._.push(a);
   }
   return out;
@@ -34,6 +52,49 @@ function parseArgs(argv) {
 function die(msg, code = 2) {
   console.error(msg);
   process.exit(code);
+}
+
+function readJson(file) {
+  if (!file || !fs.existsSync(file)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (e) {
+    die(`invalid policy json: ${file}`);
+  }
+}
+
+function applyPolicy(opts) {
+  const raw = readJson(opts.policy);
+  if (!raw) return;
+
+  const d = raw.defaults || {};
+  const mapDefaults = [
+    'file',
+    'backupKeep',
+    'backupTtlDays',
+    'lockTimeoutMs',
+    'dedupe',
+    'requireStdin',
+    'allowArgv',
+    'defaultProfile',
+  ];
+
+  for (const k of mapDefaults) {
+    if (!opts.__explicit.has(k) && Object.prototype.hasOwnProperty.call(d, k)) {
+      opts[k] = d[k];
+    }
+  }
+
+  if (!opts.__explicit.has('protectedKeys') && Array.isArray(raw.protectedKeys)) {
+    opts.protectedKeys = raw.protectedKeys.filter((x) => typeof x === 'string');
+  }
+  if (!opts.__explicit.has('requiredProfiles') && raw.requiredProfiles && typeof raw.requiredProfiles === 'object') {
+    opts.requiredProfiles = raw.requiredProfiles;
+  }
+
+  if (!opts.__explicit.has('profile') && opts.defaultProfile && !opts.profile) {
+    opts.profile = opts.defaultProfile;
+  }
 }
 
 function readLines(file) {
@@ -94,7 +155,6 @@ function pruneBackups(file, keep, ttlDays) {
 
   let deleted = 0;
 
-  // TTL prune first
   if (ttlMs > 0) {
     for (const b of backups) {
       if (now - b.mtimeMs > ttlMs) {
@@ -107,7 +167,6 @@ function pruneBackups(file, keep, ttlDays) {
     backups = backups.filter((b) => fs.existsSync(b.path));
   }
 
-  // Keep newest N
   const keepN = Math.max(0, Number(keep) || 0);
   for (let i = keepN; i < backups.length; i++) {
     try {
@@ -151,7 +210,6 @@ function withLock(file, timeoutMs, fn) {
   const lockFile = `${file}.lock`;
   const start = Date.now();
 
-  // Retry loop
   while (true) {
     try {
       const fd = fs.openSync(lockFile, 'wx', 0o600);
@@ -168,25 +226,13 @@ function withLock(file, timeoutMs, fn) {
           fs.unlinkSync(lockFile);
         } catch (_) {}
       }
-    } catch (e) {
+    } catch (_) {
       if (Date.now() - start > timeoutMs) {
         die(`lock timeout after ${timeoutMs}ms: ${lockFile}`);
       }
-      // naive sleep
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
     }
   }
-}
-
-function cmdKeys(opts) {
-  const keys = Array.from(new Set(listKeys(readLines(opts.file)))).sort();
-  for (const k of keys) console.log(k);
-}
-
-function cmdExists(opts, key) {
-  validateKey(key);
-  const keys = new Set(listKeys(readLines(opts.file)));
-  console.log(keys.has(key) ? 'present' : 'missing');
 }
 
 function lintFindings(file) {
@@ -216,14 +262,39 @@ function lintFindings(file) {
     duplicates,
     keyCount: seen.size,
     assignmentCount: [...seen.values()].reduce((a, x) => a + x.length, 0),
+    keys: [...seen.keys()].sort(),
   };
+}
+
+function requiredMissing(opts, presentKeys) {
+  const p = opts.profile;
+  if (!p) return [];
+  const req = opts.requiredProfiles?.[p];
+  if (!Array.isArray(req)) return [];
+  const set = new Set(presentKeys);
+  return req.filter((k) => !set.has(k));
+}
+
+function cmdKeys(opts) {
+  const keys = Array.from(new Set(listKeys(readLines(opts.file)))).sort();
+  for (const k of keys) console.log(k);
+}
+
+function cmdExists(opts, key) {
+  validateKey(key);
+  const keys = new Set(listKeys(readLines(opts.file)));
+  console.log(keys.has(key) ? 'present' : 'missing');
 }
 
 function cmdLint(opts) {
   const f = lintFindings(opts.file);
   for (const n of f.invalidLines) console.log(`line ${n}: invalid assignment syntax`);
   for (const d of f.duplicates) console.log(`duplicate key ${d.key} at lines ${d.lines.join(',')}`);
-  if (f.invalidLines.length || f.duplicates.length) process.exit(2);
+
+  const missing = requiredMissing(opts, f.keys);
+  if (missing.length) console.log(`missing_required(${opts.profile})=${missing.join(',')}`);
+
+  if (f.invalidLines.length || f.duplicates.length || missing.length) process.exit(2);
   console.log('OK');
 }
 
@@ -272,7 +343,6 @@ function applySet(lines, key, value, dedupeMode, ifMissing) {
     deduped.push(out[i]);
   }
 
-  // find key line index again after dedupe
   let keyLine = -1;
   for (let i = 0; i < deduped.length; i++) {
     if (extractKey(deduped[i]) === key) {
@@ -299,6 +369,9 @@ function cmdSet(opts, key, valueArg) {
     value = fs.readFileSync(0, 'utf8');
     if (value.endsWith('\n')) value = value.slice(0, -1);
   } else {
+    if (opts.requireStdin && !opts.force) {
+      die('stdin is required by policy. Use --stdin (or --force to override).');
+    }
     if (!opts.allowArgv) {
       die('argv value disabled for safety. Use --stdin (preferred) or add --allow-argv explicitly.');
     }
@@ -347,6 +420,9 @@ function applyUnset(lines, key) {
 
 function cmdUnset(opts, key) {
   validateKey(key);
+  if (opts.protectedKeys.includes(key) && !opts.force) {
+    die(`refusing to unset protected key: ${key} (use --force to override)`);
+  }
 
   return withLock(opts.file, opts.lockTimeoutMs, () => {
     const lines = readLines(opts.file);
@@ -376,30 +452,50 @@ function cmdDoctor(opts) {
   const backupCount = fs.existsSync(dir)
     ? fs.readdirSync(dir).filter((n) => n.startsWith(`${base}.bak.`)).length
     : 0;
+  const missing = requiredMissing(opts, f.keys);
 
   console.log(`file=${opts.file}`);
+  console.log(`policy=${opts.policy}`);
+  console.log(`profile=${opts.profile || 'none'}`);
   console.log(`exists=${exists ? 'yes' : 'no'}`);
   console.log(`keys=${f.keyCount}`);
   console.log(`assignments=${f.assignmentCount}`);
   console.log(`invalid_lines=${f.invalidLines.length}`);
   console.log(`duplicate_keys=${f.duplicates.length}`);
+  console.log(`missing_required=${missing.length}`);
   console.log(`backups=${backupCount}`);
   if (f.invalidLines.length) console.log(`invalid_line_numbers=${f.invalidLines.join(',')}`);
   if (f.duplicates.length) console.log(`duplicate_key_names=${f.duplicates.map((x) => x.key).join(',')}`);
+  if (missing.length) console.log(`missing_required_keys=${missing.join(',')}`);
+}
+
+function cmdPolicy(opts) {
+  console.log(`policy=${opts.policy}`);
+  console.log(`file=${opts.file}`);
+  console.log(`require_stdin=${opts.requireStdin ? 'yes' : 'no'}`);
+  console.log(`allow_argv=${opts.allowArgv ? 'yes' : 'no'}`);
+  console.log(`dedupe=${opts.dedupe}`);
+  console.log(`backup_keep=${opts.backupKeep}`);
+  console.log(`backup_ttl_days=${opts.backupTtlDays}`);
+  console.log(`lock_timeout_ms=${opts.lockTimeoutMs}`);
+  console.log(`profile=${opts.profile || 'none'}`);
+  console.log(`protected_keys=${opts.protectedKeys.join(',')}`);
 }
 
 (function main() {
   const opts = parseArgs(process.argv.slice(2));
+  applyPolicy(opts);
   const [cmd, a1, a2] = opts._;
 
   if (!cmd) {
-    die('usage: envsafe.js [--file PATH] [--dry-run] [--stdin] [--allow-argv] [--if-missing] [--dedupe keep-last|keep-first|none] <keys|exists|set|unset|lint|doctor> ...');
+    die('usage: envsafe.js [--policy PATH] [--file PATH] [--profile NAME] [--dry-run] [--stdin] [--allow-argv] [--if-missing] [--force] [--dedupe keep-last|keep-first|none] <keys|exists|set|unset|lint|doctor|policy> ...');
   }
 
   if (cmd === 'keys') return cmdKeys(opts);
   if (cmd === 'exists') return cmdExists(opts, a1);
   if (cmd === 'lint') return cmdLint(opts);
   if (cmd === 'doctor') return cmdDoctor(opts);
+  if (cmd === 'policy') return cmdPolicy(opts);
   if (cmd === 'set') return cmdSet(opts, a1, a2);
   if (cmd === 'unset') return cmdUnset(opts, a1);
 

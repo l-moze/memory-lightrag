@@ -1,0 +1,28 @@
+{
+  "defaults": {
+    "file": "/home/node/.openclaw/.env",
+    "backupKeep": 20,
+    "backupTtlDays": 7,
+    "lockTimeoutMs": 5000,
+    "dedupe": "keep-last",
+    "requireStdin": true,
+    "allowArgv": false,
+    "defaultProfile": "openclaw-core"
+  },
+  "protectedKeys": [
+    "OPENAI_API_KEY",
+    "GITHUB_TOKEN",
+    "GATEWAY_AUTH_TOKEN"
+  ],
+  "requiredProfiles": {
+    "openclaw-core": [
+      "OPENAI_API_KEY",
+      "OPENAI_BASE_URL",
+      "GATEWAY_AUTH_TOKEN"
+    ],
+    "acp-routing": [
+      "OPENAI_API_KEY",
+      "OPENAI_BASE_URL"
+    ]
+  }
+}

@@ -18,6 +18,8 @@ Enforce a **Key-First SOP** for `.env` management.
    - delete: `unset`
 4. Validate after every write:
    - `node {baseDir}/scripts/envsafe.js --file <ENV_FILE> lint`
+5. For org-wide consistency, run with policy + profile:
+   - `node {baseDir}/scripts/envsafe.js --policy /home/node/.openclaw/envsafe-policy.json --profile openclaw-core --file <ENV_FILE> doctor`
 
 ## Safety rules
 
@@ -27,6 +29,7 @@ Enforce a **Key-First SOP** for `.env` management.
 - `set` defaults to **stdin-only** input. Passing value via argv requires explicit `--allow-argv`.
 - Writes are lock-guarded + atomic and create timestamped backups.
 - Backup retention is enforced (`--backup-keep`, `--backup-ttl-days`).
+- Protected keys are policy-controlled and cannot be unset unless `--force` is explicitly passed.
 - `unset` is destructive; confirm intent if user did not explicitly ask to remove key.
 
 ## Commands
