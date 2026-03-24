@@ -7,6 +7,11 @@ description: Safe .env key-first operations (CRUD) with secret-safe defaults. Us
 
 Enforce a **Key-First SOP** for `.env` management.
 
+Detailed naming/comment standard lives in:
+- `{baseDir}/references/env-key-standard.md`
+
+When user asks about naming conventions, comment templates, key semantics clarity, or ambiguity prevention, read and follow that reference.
+
 ## Workflow (mandatory)
 
 1. Run key discovery first (no values):
