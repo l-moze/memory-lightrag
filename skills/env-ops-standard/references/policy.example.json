@@ -11,6 +11,7 @@
     "auditLog": "/home/node/.openclaw/envsafe-audit.log",
     "strict": false,
     "keyNamePattern": "^[A-Z][A-Z0-9_]*$",
+    "commentPattern": ".*used-by:.*updated:.*",
     "requireCommentForNew": true,
     "requireCommentInLint": false,
     "defaultProfile": "openclaw-core"

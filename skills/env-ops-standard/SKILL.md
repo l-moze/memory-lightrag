@@ -33,6 +33,7 @@ When user asks about naming conventions, comment templates, key semantics clarit
 - Never print raw secret values in chat/logs.
 - `set` defaults to **stdin-only** input. Passing value via argv requires explicit `--allow-argv`.
 - New keys require clear comments by default (`--comment "..."`) to avoid ambiguity.
+- New key comments are policy-validated (default requires `used-by` and `updated` markers).
 - Key names must follow policy regex (default: `^[A-Z][A-Z0-9_]*$`), no ad-hoc naming.
 - Writes are lock-guarded + atomic and create timestamped backups.
 - Backup retention is enforced (`--backup-keep`, `--backup-ttl-days`).

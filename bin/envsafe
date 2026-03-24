@@ -21,6 +21,7 @@ function parseArgs(argv) {
     allowArgv: false,
     auditLog: '/home/node/.openclaw/envsafe-audit.log',
     keyNamePattern: '^[A-Z][A-Z0-9_]*$',
+    commentPattern: '.*used-by:.*updated:.*',
     requireCommentForNew: true,
     requireCommentInLint: false,
     protectedKeys: [],
@@ -54,6 +55,7 @@ function parseArgs(argv) {
     else if (a === '--audit-log') setOpt('auditLog', argv[++i]);
     else if (a === '--comment') setOpt('comment', argv[++i]);
     else if (a === '--key-name-pattern') setOpt('keyNamePattern', argv[++i]);
+    else if (a === '--comment-pattern') setOpt('commentPattern', argv[++i]);
     else if (a === '--require-comment-for-new') setOpt('requireCommentForNew', true);
     else if (a === '--no-require-comment-for-new') setOpt('requireCommentForNew', false);
     else if (a === '--require-comment-in-lint') setOpt('requireCommentInLint', true);
@@ -93,6 +95,7 @@ function applyPolicy(opts) {
     'allowArgv',
     'auditLog',
     'keyNamePattern',
+    'commentPattern',
     'requireCommentForNew',
     'requireCommentInLint',
     'strict',
@@ -506,6 +509,9 @@ function cmdSet(opts, key, valueArg) {
   if (!preExists && opts.requireCommentForNew && !(opts.comment && String(opts.comment).trim())) {
     die(`comment required for new key: ${key} (use --comment "..." or disable via policy)`);
   }
+  if (!preExists && opts.requireCommentForNew) {
+    validateCommentByPolicy(opts, String(opts.comment || ''));
+  }
 
   return withLock(opts.file, opts.lockTimeoutMs, opts.lockStaleMs, () => {
     const lines = readLines(opts.file);
@@ -594,6 +600,7 @@ function cmdDoctor(opts) {
   console.log(`duplicate_keys=${f.duplicates.length}`);
   console.log(`missing_required=${missing.length}`);
   console.log(`key_name_pattern=${opts.keyNamePattern}`);
+  console.log(`comment_pattern=${opts.commentPattern}`);
   console.log(`require_comment_for_new=${opts.requireCommentForNew ? 'yes' : 'no'}`);
   console.log(`require_comment_in_lint=${opts.requireCommentInLint ? 'yes' : 'no'}`);
   console.log(`backups=${backupCount}`);
@@ -614,6 +621,22 @@ function cmdDoctor(opts) {
   }
 }
 
+function validateCommentByPolicy(opts, comment) {
+  let re = null;
+  try {
+    re = new RegExp(opts.commentPattern || '.*');
+  } catch (_) {
+    die(`invalid commentPattern regex in policy: ${opts.commentPattern}`);
+  }
+  if (!re.test(comment || '')) {
+    die(`comment does not match policy (${opts.commentPattern}). include required fields like used-by and updated`);
+  }
+}
+
+function usage() {
+  console.log('usage: envsafe.js [--policy PATH] [--file PATH] [--profile NAME] [--dry-run] [--strict] [--stdin] [--allow-argv] [--comment TEXT] [--if-missing] [--force] [--dedupe keep-last|keep-first|none] [--audit-log PATH] [--lock-stale-ms N] [--key-name-pattern REGEX] [--comment-pattern REGEX] [--require-comment-in-lint] <keys|exists|set|unset|lint|doctor|policy|help> ...');
+}
+
 function cmdPolicy(opts) {
   console.log(`policy=${opts.policy}`);
   console.log(`file=${opts.file}`);
@@ -627,6 +650,7 @@ function cmdPolicy(opts) {
   console.log(`audit_log=${opts.auditLog || ''}`);
   console.log(`strict_default=${opts.strict ? 'yes' : 'no'}`);
   console.log(`key_name_pattern=${opts.keyNamePattern}`);
+  console.log(`comment_pattern=${opts.commentPattern}`);
   console.log(`require_comment_for_new=${opts.requireCommentForNew ? 'yes' : 'no'}`);
   console.log(`require_comment_in_lint=${opts.requireCommentInLint ? 'yes' : 'no'}`);
   console.log(`profile=${opts.profile || 'none'}`);
@@ -639,8 +663,13 @@ function cmdPolicy(opts) {
   enforcePolicyFileSafety(opts);
   const [cmd, a1, a2] = opts._;
 
-  if (!cmd) {
-    die('usage: envsafe.js [--policy PATH] [--file PATH] [--profile NAME] [--dry-run] [--strict] [--stdin] [--allow-argv] [--comment TEXT] [--if-missing] [--force] [--dedupe keep-last|keep-first|none] [--audit-log PATH] [--lock-stale-ms N] [--key-name-pattern REGEX] [--require-comment-in-lint] <keys|exists|set|unset|lint|doctor|policy> ...');
+  if (!cmd || cmd === 'help') {
+    usage();
+    return;
+  }
+  if (cmd === '--help' || cmd === '-h') {
+    usage();
+    return;
   }
 
   if (cmd === 'keys') return cmdKeys(opts);
