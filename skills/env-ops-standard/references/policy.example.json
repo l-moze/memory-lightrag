@@ -4,9 +4,12 @@
     "backupKeep": 20,
     "backupTtlDays": 7,
     "lockTimeoutMs": 5000,
+    "lockStaleMs": 300000,
     "dedupe": "keep-last",
     "requireStdin": true,
     "allowArgv": false,
+    "auditLog": "/home/node/.openclaw/envsafe-audit.log",
+    "strict": false,
     "defaultProfile": "openclaw-core"
   },
   "protectedKeys": [

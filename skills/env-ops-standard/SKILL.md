@@ -48,8 +48,12 @@ Enforce a **Key-First SOP** for `.env` management.
   - `node {baseDir}/scripts/envsafe.js --file /home/node/.openclaw/.env lint`
 - Health summary:
   - `node {baseDir}/scripts/envsafe.js --file /home/node/.openclaw/.env doctor`
+- Strict health check (CI/automation):
+  - `node {baseDir}/scripts/envsafe.js --file /home/node/.openclaw/.env --strict doctor`
 - Preview write without changing file:
   - `... set/unset ... --dry-run`
+- Show effective policy:
+  - `node {baseDir}/scripts/envsafe.js --policy /home/node/.openclaw/envsafe-policy.json policy`
 
 ## Output contract
 

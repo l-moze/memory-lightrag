@@ -15,12 +15,15 @@ function parseArgs(argv) {
     backupKeep: 20,
     backupTtlDays: 7,
     lockTimeoutMs: 5000,
+    lockStaleMs: 300000,
     dedupe: 'keep-last',
     requireStdin: true,
     allowArgv: false,
+    auditLog: '/home/node/.openclaw/envsafe-audit.log',
     protectedKeys: [],
     requiredProfiles: {},
     defaultProfile: '',
+    strict: false,
     _: [],
     __explicit: new Set(),
   };
@@ -39,10 +42,13 @@ function parseArgs(argv) {
     else if (a === '--allow-argv') setOpt('allowArgv', true);
     else if (a === '--if-missing') setOpt('ifMissing', true);
     else if (a === '--dry-run') setOpt('dryRun', true);
+    else if (a === '--strict') setOpt('strict', true);
     else if (a === '--force') setOpt('force', true);
     else if (a === '--backup-keep') setOpt('backupKeep', Number(argv[++i]));
     else if (a === '--backup-ttl-days') setOpt('backupTtlDays', Number(argv[++i]));
     else if (a === '--lock-timeout-ms') setOpt('lockTimeoutMs', Number(argv[++i]));
+    else if (a === '--lock-stale-ms') setOpt('lockStaleMs', Number(argv[++i]));
+    else if (a === '--audit-log') setOpt('auditLog', argv[++i]);
     else if (a === '--dedupe') setOpt('dedupe', argv[++i] || 'keep-last');
     else out._.push(a);
   }
@@ -73,9 +79,12 @@ function applyPolicy(opts) {
     'backupKeep',
     'backupTtlDays',
     'lockTimeoutMs',
+    'lockStaleMs',
     'dedupe',
     'requireStdin',
     'allowArgv',
+    'auditLog',
+    'strict',
     'defaultProfile',
   ];
 
@@ -206,7 +215,33 @@ function normalizeValue(v) {
   return v;
 }
 
-function withLock(file, timeoutMs, fn) {
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function appendAudit(opts, event, fields = {}) {
+  if (!opts.auditLog) return;
+  try {
+    fs.mkdirSync(path.dirname(opts.auditLog), { recursive: true });
+    const line = JSON.stringify({ ts: nowIso(), event, file: opts.file, profile: opts.profile || null, ...fields }) + '\n';
+    fs.appendFileSync(opts.auditLog, line, { encoding: 'utf8', mode: 0o600 });
+    try { fs.chmodSync(opts.auditLog, 0o600); } catch (_) {}
+  } catch (_) {
+    // don't block main flow on audit failure
+  }
+}
+
+function isProcessAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function withLock(file, timeoutMs, staleMs, fn) {
   const lockFile = `${file}.lock`;
   const start = Date.now();
 
@@ -214,7 +249,8 @@ function withLock(file, timeoutMs, fn) {
     try {
       const fd = fs.openSync(lockFile, 'wx', 0o600);
       try {
-        fs.writeFileSync(fd, String(process.pid));
+        const payload = JSON.stringify({ pid: process.pid, ts: Date.now() });
+        fs.writeFileSync(fd, payload);
       } catch (_) {}
       try {
         return fn();
@@ -227,6 +263,20 @@ function withLock(file, timeoutMs, fn) {
         } catch (_) {}
       }
     } catch (_) {
+      // stale-lock recovery (best effort)
+      try {
+        const st = fs.statSync(lockFile);
+        if (Date.now() - st.mtimeMs > staleMs) {
+          let stale = true;
+          try {
+            const raw = fs.readFileSync(lockFile, 'utf8');
+            const obj = JSON.parse(raw);
+            if (obj && Number.isInteger(obj.pid) && isProcessAlive(obj.pid)) stale = false;
+          } catch (_) {}
+          if (stale) fs.unlinkSync(lockFile);
+        }
+      } catch (_) {}
+
       if (Date.now() - start > timeoutMs) {
         die(`lock timeout after ${timeoutMs}ms: ${lockFile}`);
       }
@@ -358,6 +408,19 @@ function applySet(lines, key, value, dedupeMode, ifMissing) {
   return { out: deduped, changed, removed, skipped };
 }
 
+function enforcePolicyFileSafety(opts) {
+  if (!opts.policy || !fs.existsSync(opts.policy)) return;
+  try {
+    const st = fs.statSync(opts.policy);
+    const mode = st.mode & 0o777;
+    if ((mode & 0o022) !== 0) {
+      die(`insecure policy permissions: ${opts.policy} mode=${mode.toString(8)} (must not be group/world writable)`);
+    }
+  } catch (e) {
+    die(`cannot stat policy file: ${opts.policy}`);
+  }
+}
+
 function cmdSet(opts, key, valueArg) {
   validateKey(key);
   if (!['keep-last', 'keep-first', 'none'].includes(opts.dedupe)) {
@@ -381,7 +444,7 @@ function cmdSet(opts, key, valueArg) {
   if (value === undefined) die('set requires value: use --stdin or --allow-argv <VALUE>');
   value = normalizeValue(value);
 
-  return withLock(opts.file, opts.lockTimeoutMs, () => {
+  return withLock(opts.file, opts.lockTimeoutMs, opts.lockStaleMs, () => {
     const lines = readLines(opts.file);
     const result = applySet(lines, key, value, opts.dedupe, !!opts.ifMissing);
 
@@ -395,6 +458,7 @@ function cmdSet(opts, key, valueArg) {
       console.log(`backup=${bak}`);
       console.log(`backups_deleted=${pruned.deleted}`);
       console.log(`backups_remaining=${pruned.remaining}`);
+      appendAudit(opts, 'set', { key, changed: result.changed, removed: result.removed, skipped: result.skipped, dryRun: false });
       return;
     }
 
@@ -402,6 +466,7 @@ function cmdSet(opts, key, valueArg) {
     console.log(`changed=${result.changed}`);
     console.log(`removed=${result.removed}`);
     console.log(`skipped=${result.skipped}`);
+    appendAudit(opts, 'set', { key, changed: result.changed, removed: result.removed, skipped: result.skipped, dryRun: true });
   });
 }
 
@@ -424,7 +489,7 @@ function cmdUnset(opts, key) {
     die(`refusing to unset protected key: ${key} (use --force to override)`);
   }
 
-  return withLock(opts.file, opts.lockTimeoutMs, () => {
+  return withLock(opts.file, opts.lockTimeoutMs, opts.lockStaleMs, () => {
     const lines = readLines(opts.file);
     const result = applyUnset(lines, key);
 
@@ -436,11 +501,13 @@ function cmdUnset(opts, key) {
       console.log(`backup=${bak}`);
       console.log(`backups_deleted=${pruned.deleted}`);
       console.log(`backups_remaining=${pruned.remaining}`);
+      appendAudit(opts, 'unset', { key, removed: result.removed, dryRun: false });
       return;
     }
 
     console.log('dry_run=true');
     console.log(`removed=${result.removed}`);
+    appendAudit(opts, 'unset', { key, removed: result.removed, dryRun: true });
   });
 }
 
@@ -467,6 +534,17 @@ function cmdDoctor(opts) {
   if (f.invalidLines.length) console.log(`invalid_line_numbers=${f.invalidLines.join(',')}`);
   if (f.duplicates.length) console.log(`duplicate_key_names=${f.duplicates.map((x) => x.key).join(',')}`);
   if (missing.length) console.log(`missing_required_keys=${missing.join(',')}`);
+
+  appendAudit(opts, 'doctor', {
+    invalidLines: f.invalidLines.length,
+    duplicateKeys: f.duplicates.length,
+    missingRequired: missing.length,
+    strict: !!opts.strict,
+  });
+
+  if (opts.strict && (f.invalidLines.length || f.duplicates.length || missing.length)) {
+    process.exit(2);
+  }
 }
 
 function cmdPolicy(opts) {
@@ -478,6 +556,9 @@ function cmdPolicy(opts) {
   console.log(`backup_keep=${opts.backupKeep}`);
   console.log(`backup_ttl_days=${opts.backupTtlDays}`);
   console.log(`lock_timeout_ms=${opts.lockTimeoutMs}`);
+  console.log(`lock_stale_ms=${opts.lockStaleMs}`);
+  console.log(`audit_log=${opts.auditLog || ''}`);
+  console.log(`strict_default=${opts.strict ? 'yes' : 'no'}`);
   console.log(`profile=${opts.profile || 'none'}`);
   console.log(`protected_keys=${opts.protectedKeys.join(',')}`);
 }
@@ -485,10 +566,11 @@ function cmdPolicy(opts) {
 (function main() {
   const opts = parseArgs(process.argv.slice(2));
   applyPolicy(opts);
+  enforcePolicyFileSafety(opts);
   const [cmd, a1, a2] = opts._;
 
   if (!cmd) {
-    die('usage: envsafe.js [--policy PATH] [--file PATH] [--profile NAME] [--dry-run] [--stdin] [--allow-argv] [--if-missing] [--force] [--dedupe keep-last|keep-first|none] <keys|exists|set|unset|lint|doctor|policy> ...');
+    die('usage: envsafe.js [--policy PATH] [--file PATH] [--profile NAME] [--dry-run] [--strict] [--stdin] [--allow-argv] [--if-missing] [--force] [--dedupe keep-last|keep-first|none] [--audit-log PATH] [--lock-stale-ms N] <keys|exists|set|unset|lint|doctor|policy> ...');
   }
 
   if (cmd === 'keys') return cmdKeys(opts);
