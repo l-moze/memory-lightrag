@@ -1,4 +1,4 @@
-import type { QueryIntent } from "./query-intent";
+import type { QueryIntent } from "./query-intent.ts";
 
 export type IntentFeatures = {
   query: string;
