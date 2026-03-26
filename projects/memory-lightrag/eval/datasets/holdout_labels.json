@@ -1,0 +1,82 @@
+[
+  {
+    "id": "Q001",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q002",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q003",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q004",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q005",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q012",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q013",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q014",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q015",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q016",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q023",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q024",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q025",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q026",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q027",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q034",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q035",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q036",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q037",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q038",
+    "expected_intent": "GENERAL"
+  }
+]

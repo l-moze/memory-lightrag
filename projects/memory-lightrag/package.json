@@ -7,7 +7,8 @@
   "main": "src/index.ts",
   "scripts": {
     "verify:intent-rerank": "node --experimental-strip-types test/intent-rerank.verify.mjs",
-    "eval:intent-replay": "node --experimental-strip-types eval/run-intent-replay-eval.mjs"
+    "eval:intent-replay": "node --experimental-strip-types eval/run-intent-replay-eval.mjs",
+    "eval:intent-replay:legacy": "node --experimental-strip-types eval/run-intent-replay-eval.mjs"
   },
   "openclaw": {
     "extensions": [

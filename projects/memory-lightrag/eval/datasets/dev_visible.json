@@ -1,0 +1,502 @@
+[
+  {
+    "id": "Q006",
+    "query": "what caused the reranker score drop",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q007",
+    "query": "这个 bug 是怎么会在夜间出现的",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q008",
+    "query": "导致 embedding mismatch 的原因有哪些",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q009",
+    "query": "because of what did cache hit rate collapse",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q010",
+    "query": "为何用户反馈答案突然变短",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q011",
+    "query": "what is the root cause of stale memory recall",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q017",
+    "query": "before the patch, response quality was stable from when",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q018",
+    "query": "请给我这次事故的时间线",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q019",
+    "query": "after migration, when did error rate return to normal",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q020",
+    "query": "那次线上告警持续了多久",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q021",
+    "query": "最近一次手动修复是在啥时候",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q022",
+    "query": "这个 feature 从何时开始灰度",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q028",
+    "query": "哪位同学维护 query-intent 规则",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q029",
+    "query": "what file contains fallback contract",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q030",
+    "query": "owner of adapter/lightrag.ts",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q031",
+    "query": "负责告警策略的人现在是谁",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q032",
+    "query": "哪个文档记录了 token budget 方案",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q033",
+    "query": "目前对应的负责人有变更吗",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q039",
+    "query": "给我一个高层 overview，不要太细",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q040",
+    "query": "做个简短状态播报",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q041",
+    "query": "extract action items from recent notes",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q042",
+    "query": "把最近讨论合成一段摘要",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q043",
+    "query": "我想快速了解当前进度",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q044",
+    "query": "给一个面向管理层的简报版本",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q045",
+    "query": "why was context stitching unstable in batch mode",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q046",
+    "query": "为什么这次召回命中率在同样数据下变低",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q047",
+    "query": "what reason made the summary suddenly verbose",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q048",
+    "query": "根因分析：为什么夜间任务重复执行",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q049",
+    "query": "what caused memory write amplification yesterday",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q050",
+    "query": "为啥新的过滤规则让结果变少了",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q051",
+    "query": "explain the cause of rank inversion in top-3",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q052",
+    "query": "导致这次延迟抖动的主要因素是什么",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q053",
+    "query": "why did token usage jump after policy update",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q054",
+    "query": "这波误召回是因为什么触发的",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q055",
+    "query": "what is the underlying cause of cache thrashing",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q056",
+    "query": "为什么用户问同样问题却得到不同答案",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q057",
+    "query": "what caused the ontology merge conflict to appear",
+    "expected_intent": "WHY"
+  },
+  {
+    "id": "Q058",
+    "query": "when was the last successful full reindex",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q059",
+    "query": "这次问题最早在什么时候暴露出来",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q060",
+    "query": "at what time did p95 latency peak",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q061",
+    "query": "恢复到稳定状态是在几点几分",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q062",
+    "query": "when did we first notice hallucination complaints",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q063",
+    "query": "请问这个补丁是何时上线的",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q064",
+    "query": "which date marks the start of the degradation window",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q065",
+    "query": "那次内存回收异常持续到什么时候",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q066",
+    "query": "when exactly did the canary rollback finish",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q067",
+    "query": "最近一次配置变更发生在什么时间",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q068",
+    "query": "after the hotfix, when did success rate cross 99%",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q069",
+    "query": "这段日志对应的是哪天晚上",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q070",
+    "query": "when did the incident bridge channel open",
+    "expected_intent": "WHEN"
+  },
+  {
+    "id": "Q071",
+    "query": "who is the oncall for memory retrieval this week",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q072",
+    "query": "哪个仓库保存了 replay 评测脚本",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q073",
+    "query": "which module maps query intent to policy buckets",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q074",
+    "query": "这次事故的主负责人是谁",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q075",
+    "query": "where can I find the migration checklist",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q076",
+    "query": "哪份文档定义了 fallback 的输入输出",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q077",
+    "query": "who maintains the eval dataset quality",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q078",
+    "query": "which service owns vector index compaction",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q079",
+    "query": "这个告警规则归哪个团队维护",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q080",
+    "query": "where is the runbook for degraded mode",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q081",
+    "query": "谁审批了本周的阈值调整",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q082",
+    "query": "which file defines domain routing defaults",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q083",
+    "query": "这个项目现在的 tech lead 是谁",
+    "expected_intent": "ENTITY"
+  },
+  {
+    "id": "Q084",
+    "query": "summarize this week's memory system health in 5 bullets",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q085",
+    "query": "帮我做一个本周工作进展总览",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q086",
+    "query": "give me a short recap of what changed after the hotfix",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q087",
+    "query": "整理最近讨论，输出可执行的下一步建议",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q088",
+    "query": "provide a management-level summary of current risks",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q089",
+    "query": "请把这次优化的收益和代价做个概述",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q090",
+    "query": "draft a concise status update for stakeholders",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q091",
+    "query": "把过去三天的调试结论浓缩成要点",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q092",
+    "query": "give an executive brief of the retrieval pipeline state",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q093",
+    "query": "总结目前方案的优缺点并给建议",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q094",
+    "query": "列一下当前最重要的待办和阻塞",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q095",
+    "query": "create a quick project snapshot for handoff",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q096",
+    "query": "请给我一个不超过六行的现状说明",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q097",
+    "query": "synthesize key takeaways from the incident notes",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q098",
+    "query": "整理成一个面向新同学的入门摘要",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q099",
+    "query": "what should we focus on next based on recent progress",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q100",
+    "query": "把目前路线图讲清楚，重点放在近期动作",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q101",
+    "query": "produce a compact update with decisions and open questions",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q102",
+    "query": "做一份今天的工作简报",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q103",
+    "query": "summarize the latest experiments and outcomes",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q104",
+    "query": "把关键讨论收敛成三条结论",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q105",
+    "query": "write a plain-language recap of the architecture changes",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q106",
+    "query": "请概括当前系统状态与后续计划",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q107",
+    "query": "give me the big picture of where this project stands",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q108",
+    "query": "整理近期反馈，提炼共同问题模式",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q109",
+    "query": "输出一个高层次进度说明，适合周会口播",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q110",
+    "query": "generate a concise end-of-day report from notes",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q111",
+    "query": "给我一版偏业务视角的总结",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q112",
+    "query": "combine recent updates into one coherent brief",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q113",
+    "query": "提取本周最值得复盘的三个点",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q114",
+    "query": "prepare a short handover summary for the next shift",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q115",
+    "query": "把最近 issue 讨论整理成结论和行动项",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q116",
+    "query": "create a top-level narrative of what happened and why it matters",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q117",
+    "query": "请按轻重缓急概述当前问题盘面",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q118",
+    "query": "share a quick digest of progress, blockers, and asks",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q119",
+    "query": "写一个简洁版本，告诉我现在到哪一步了",
+    "expected_intent": "GENERAL"
+  },
+  {
+    "id": "Q120",
+    "query": "把最近的信息合并成一段清晰摘要",
+    "expected_intent": "GENERAL"
+  }
+]

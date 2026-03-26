@@ -1,0 +1,82 @@
+[
+  {
+    "id": "Q001",
+    "query": "为什么昨天的 memory sync 失败了？"
+  },
+  {
+    "id": "Q002",
+    "query": "why did the retrieval latency spike after deploy"
+  },
+  {
+    "id": "Q003",
+    "query": "这次上下文丢失的根因是什么"
+  },
+  {
+    "id": "Q004",
+    "query": "reason for duplicate chunks in index?"
+  },
+  {
+    "id": "Q005",
+    "query": "为啥那天 agent thread 没有继续执行"
+  },
+  {
+    "id": "Q012",
+    "query": "这个问题是什么时候第一次被记录的"
+  },
+  {
+    "id": "Q013",
+    "query": "when did we enable hybrid search"
+  },
+  {
+    "id": "Q014",
+    "query": "上次回滚发生在几点"
+  },
+  {
+    "id": "Q015",
+    "query": "timeline of the outage last Friday"
+  },
+  {
+    "id": "Q016",
+    "query": "发布前后检索质量变化是在哪天开始的"
+  },
+  {
+    "id": "Q023",
+    "query": "谁负责 memory-lightrag 的索引构建"
+  },
+  {
+    "id": "Q024",
+    "query": "which team owns the rerank policy"
+  },
+  {
+    "id": "Q025",
+    "query": "这个 issue 对应的项目是哪个"
+  },
+  {
+    "id": "Q026",
+    "query": "where is the postmortem doc stored"
+  },
+  {
+    "id": "Q027",
+    "query": "who approved the model switch"
+  },
+  {
+    "id": "Q034",
+    "query": "总结一下最近一周 memory recall 的变化"
+  },
+  {
+    "id": "Q035",
+    "query": "give me a concise recap of yesterday's debugging notes"
+  },
+  {
+    "id": "Q036",
+    "query": "帮我整理一下这个项目的复盘要点"
+  },
+  {
+    "id": "Q037",
+    "query": "列出最值得关注的三条进展"
+  },
+  {
+    "id": "Q038",
+    "query": "summarize key decisions from the last sync"
+  }
+]
