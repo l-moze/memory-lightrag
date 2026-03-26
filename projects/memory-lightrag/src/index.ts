@@ -53,6 +53,11 @@ function buildOntologyDetails(graph: any, domainCtx: any, domain: MemoryDomain) 
     }),
   );
 
+  const rawSourceCount = rawSources.length;
+  const keptSourceCount = sources.length;
+  const droppedSourceCount = Math.max(0, rawSourceCount - keptSourceCount);
+  const sourceDropRate = rawSourceCount > 0 ? droppedSourceCount / rawSourceCount : 0;
+
   const allowedEvidence = new Set<string>();
   for (const source of sources) {
     if (source?.id) allowedEvidence.add(String(source.id));
@@ -60,7 +65,8 @@ function buildOntologyDetails(graph: any, domainCtx: any, domain: MemoryDomain) 
     if (source?.metadata?.filePath) allowedEvidence.add(String(source.metadata.filePath));
   }
 
-  const relationships = (Array.isArray(graph.relationships) ? graph.relationships : [])
+  const rawRelationships = Array.isArray(graph.relationships) ? graph.relationships : [];
+  const relationships = rawRelationships
     .map((r: any) => {
       const evidence = Array.isArray(r?.evidenceSourceIds)
         ? r.evidenceSourceIds.filter((id: any) => allowedEvidence.has(String(id)))
@@ -71,6 +77,10 @@ function buildOntologyDetails(graph: any, domainCtx: any, domain: MemoryDomain) 
       if (!Array.isArray(r?.evidenceSourceIds)) return true;
       return r.evidenceSourceIds.length > 0;
     });
+
+  const rawRelationCount = rawRelationships.length;
+  const keptRelationCount = relationships.length;
+  const droppedRelationCount = Math.max(0, rawRelationCount - keptRelationCount);
 
   const entities = (Array.isArray(graph.entities) ? graph.entities : []).filter((e: any) => {
     const sourceTag = String(e?.sourceId || e?.filePath || "");
@@ -86,6 +96,19 @@ function buildOntologyDetails(graph: any, domainCtx: any, domain: MemoryDomain) 
       entityCount: entities.length,
       relationCount: relationships.length,
       sourceCount: sources.length,
+    },
+    filtering: {
+      sources: {
+        before: rawSourceCount,
+        after: keptSourceCount,
+        dropped: droppedSourceCount,
+        dropRate: Number(sourceDropRate.toFixed(4)),
+      },
+      relationsByEvidence: {
+        before: rawRelationCount,
+        after: keptRelationCount,
+        dropped: droppedRelationCount,
+      },
     },
     entities: entities.slice(0, 20),
     relations: relationships.slice(0, 20),

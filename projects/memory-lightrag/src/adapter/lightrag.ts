@@ -89,6 +89,52 @@ function asNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+const ENTITY_TYPE_MAP: Record<string, string> = {
+  person: "person",
+  people: "person",
+  org: "org",
+  organization: "org",
+  company: "org",
+  project: "project",
+  task: "task",
+  event: "event",
+  concept: "concept",
+  artifact: "artifact",
+  location: "location",
+  place: "location",
+  time: "time",
+};
+
+const RELATION_TYPE_MAP: Record<string, string> = {
+  mentions: "mentions",
+  mention: "mentions",
+  about: "about",
+  belongs_to: "belongs_to",
+  belongs: "belongs_to",
+  depends_on: "depends_on",
+  depend_on: "depends_on",
+  causes: "causes",
+  cause: "causes",
+  resolved_by: "resolved_by",
+  resolve_by: "resolved_by",
+  updated_by: "updated_by",
+  update_by: "updated_by",
+  same_as: "same_as",
+  equivalent_to: "same_as",
+  related_to: "related_to",
+  related: "related_to",
+};
+
+function normalizeEntityType(value: unknown): string {
+  const raw = (asString(value) || "other").toLowerCase();
+  return ENTITY_TYPE_MAP[raw] || "other";
+}
+
+function normalizeRelationType(value: unknown): string {
+  const raw = (asString(value) || "related_to").toLowerCase();
+  return RELATION_TYPE_MAP[raw] || "related_to";
+}
+
 function sourceKindFromUri(uri?: string): "file" | "web" | "unknown" {
   if (!uri) return "unknown";
   if (uri.startsWith("http://") || uri.startsWith("https://")) return "web";
@@ -125,7 +171,7 @@ function mapEntity(raw: any, index: number) {
 
   return {
     id: asString(raw?.id) || asString(raw?.entity_id) || `ent:${name}:${index}`,
-    type: (asString(raw?.entity_type) || asString(raw?.type) || "other").toLowerCase(),
+    type: normalizeEntityType(asString(raw?.entity_type) || asString(raw?.type)),
     name,
     summary: asString(raw?.description) || asString(raw?.summary),
     confidence: asNumber(raw?.confidence),
@@ -153,7 +199,7 @@ function mapRelationship(raw: any, index: number) {
 
   return {
     id: asString(raw?.id) || asString(raw?.relationship_id) || `rel:${fromEntityId}:${toEntityId}:${index}`,
-    type: (asString(raw?.type) || asString(raw?.relation_type) || "related_to").toLowerCase(),
+    type: normalizeRelationType(asString(raw?.type) || asString(raw?.relation_type)),
     fromEntityId,
     toEntityId,
     weight: asNumber(raw?.weight),
