@@ -1,8 +1,10 @@
 import http from 'node:http';
 import { URL } from 'node:url';
 import { DashScopeRealtimePool } from './dashscope_realtime_pool.js';
+import { createPool as createDashScopeHttpPool } from './dashscope_http.js';
 import { pcm16ToWav } from './wav.js';
 import { ffmpegEncodeFromPcm16le, probeFfmpeg } from './encode_ffmpeg.js';
+import { createPool as createDoubaoSsePool } from './doubao_http_sse.js';
 
 const PORT = Number.parseInt(process.env.PORT ?? '3901', 10);
 const HOST = process.env.HOST ?? '127.0.0.1';
@@ -10,27 +12,48 @@ const HOST = process.env.HOST ?? '127.0.0.1';
 const BRIDGE_TOKEN = process.env.BRIDGE_TOKEN ?? ''; // optional
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY ?? '';
-const DASHSCOPE_MODEL = process.env.DASHSCOPE_MODEL ?? 'qwen3-tts-flash-realtime';
-const DASHSCOPE_VOICE = process.env.DASHSCOPE_VOICE ?? 'Cherry';
+const DASHSCOPE_MODEL = process.env.DASHSCOPE_MODEL ?? 'qwen3-tts-instruct-flash-realtime';
+const DASHSCOPE_VOICE = process.env.DASHSCOPE_VOICE ?? 'Chelsie';
 const DASHSCOPE_LANGUAGE_TYPE = process.env.DASHSCOPE_LANGUAGE_TYPE ?? 'Auto';
 const SAMPLE_RATE = Number.parseInt(process.env.SAMPLE_RATE ?? '24000', 10);
 const POOL_SIZE = Number.parseInt(process.env.POOL_SIZE ?? '1', 10);
+const USE_HTTP_ADAPTER = process.env.USE_HTTP_ADAPTER === 'true';
+const USE_DOUBAO = process.env.USE_DOUBAO === 'true';
 
 if (!DASHSCOPE_API_KEY) {
   console.warn('[tts-bridge] DASHSCOPE_API_KEY is not set. Requests will fail until configured.');
 }
 
-const pool = new DashScopeRealtimePool({
-  apiKey: DASHSCOPE_API_KEY,
-  model: DASHSCOPE_MODEL,
-  voice: DASHSCOPE_VOICE,
-  languageType: DASHSCOPE_LANGUAGE_TYPE,
-  sampleRate: SAMPLE_RATE,
-  poolSize: POOL_SIZE,
-  region: 'beijing'
-});
-
-await pool.start();
+let pool;
+if (USE_DOUBAO) {
+  console.log('[tts-bridge] Using Doubao TTS V3 (HTTP SSE)');
+  pool = createDoubaoSsePool();
+  await pool.start?.();
+} else if (USE_HTTP_ADAPTER) {
+  console.log('[tts-bridge] Using HTTP adapter (REST API)');
+  pool = createDashScopeHttpPool({
+    apiKey: DASHSCOPE_API_KEY,
+    model: DASHSCOPE_MODEL,
+    voice: DASHSCOPE_VOICE,
+    languageType: DASHSCOPE_LANGUAGE_TYPE,
+    sampleRate: SAMPLE_RATE,
+    poolSize: POOL_SIZE,
+    region: 'beijing'
+  });
+  await pool.start?.();
+} else {
+  console.log('[tts-bridge] Using WebSocket adapter (Realtime)');
+  pool = new DashScopeRealtimePool({
+    apiKey: DASHSCOPE_API_KEY,
+    model: DASHSCOPE_MODEL,
+    voice: DASHSCOPE_VOICE,
+    languageType: DASHSCOPE_LANGUAGE_TYPE,
+    sampleRate: SAMPLE_RATE,
+    poolSize: POOL_SIZE,
+    region: 'beijing'
+  });
+  await pool.start();
+}
 
 function json(res, code, obj) {
   const body = Buffer.from(JSON.stringify(obj));
@@ -77,8 +100,8 @@ function normalizeResponseFormat(payload) {
   if (fmt === 'opus') return 'opus';
   if (fmt === 'mp3' || fmt === 'mpeg') return 'mp3';
   if (fmt === 'wav' || fmt === 'pcm') return 'wav';
-  // Default policy: Telegram wants opus; OpenClaw will always send explicit response_format.
-  return 'mp3';
+  // Default to opus for Telegram/voice-bubble channels (most common use case).
+  return 'opus';
 }
 
 async function buildAudioResponse({ pcm, format }) {
@@ -103,6 +126,27 @@ async function buildAudioResponse({ pcm, format }) {
   return { body: encoded, contentType: 'audio/mpeg', outFormat: 'mp3' };
 }
 
+async function buildAudioResponseFromUpstream({ upstream, responseFormat }) {
+  // upstream: { pcm?: Buffer, audio?: Buffer, audioFormat?: 'ogg_opus'|'mp3'|'pcm', timings }
+  if (upstream?.audio && upstream?.audioFormat) {
+    if (upstream.audioFormat === 'ogg_opus') {
+      return { body: upstream.audio, contentType: 'audio/ogg', outFormat: 'opus', encodeMs: 0 };
+    }
+    if (upstream.audioFormat === 'mp3') {
+      return { body: upstream.audio, contentType: 'audio/mpeg', outFormat: 'mp3', encodeMs: 0 };
+    }
+    // pcm -> wrap/encode according to responseFormat
+    const t0 = Date.now();
+    const audio = await buildAudioResponse({ pcm: upstream.audio, format: responseFormat });
+    return { ...audio, encodeMs: Date.now() - t0 };
+  }
+
+  // Legacy upstream returns PCM
+  const t0 = Date.now();
+  const audio = await buildAudioResponse({ pcm: upstream.pcm, format: responseFormat });
+  return { ...audio, encodeMs: Date.now() - t0 };
+}
+
 const server = http.createServer(async (req, res) => {
   const startedAt = Date.now();
   try {
@@ -120,7 +164,14 @@ const server = http.createServer(async (req, res) => {
           sampleRate: SAMPLE_RATE,
           poolSize: POOL_SIZE,
           ready: pool.readyState()
-        }
+        },
+        doubao: {
+          resourceId: process.env.DOUBAO_RESOURCE_ID ?? 'seed-tts-2.0',
+          speaker: process.env.DOUBAO_SPEAKER ?? 'zh_female_vv_jupiter_bigtts',
+          sampleRate: process.env.DOUBAO_SAMPLE_RATE ?? '24000',
+          baseUrl: process.env.DOUBAO_BASE_URL ?? 'https://openspeech.bytedance.com'
+        },
+        upstream: USE_DOUBAO ? 'doubao' : (USE_HTTP_ADAPTER ? 'dashscope-http' : 'dashscope-ws')
       });
     }
 
@@ -148,12 +199,10 @@ const server = http.createServer(async (req, res) => {
       const reqId = `req_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
       const t0 = Date.now();
-      const result = await pool.synthesize({ text, requestId: reqId });
+      const result = await pool.synthesize({ text, requestId: reqId, responseFormat });
       const t1 = Date.now();
 
-      const tEnc0 = Date.now();
-      const audio = await buildAudioResponse({ pcm: result.pcm, format: responseFormat });
-      const tEnc1 = Date.now();
+      const audio = await buildAudioResponseFromUpstream({ upstream: result, responseFormat });
 
       res.statusCode = 200;
       res.setHeader('content-type', audio.contentType);
@@ -162,7 +211,7 @@ const server = http.createServer(async (req, res) => {
       res.setHeader('x-tts-bridge-t-acquire-ms', String(result.timings.acquireConnMs));
       res.setHeader('x-tts-bridge-t-first-audio-ms', String(result.timings.firstAudioDeltaMs));
       res.setHeader('x-tts-bridge-t-upstream-ms', String(result.timings.upstreamTotalMs));
-      res.setHeader('x-tts-bridge-t-encode-ms', String(tEnc1 - tEnc0));
+      res.setHeader('x-tts-bridge-t-encode-ms', String(audio.encodeMs));
       res.setHeader('x-tts-bridge-t-total-ms', String(t1 - t0));
       res.setHeader('content-length', audio.body.length);
       res.end(audio.body);
@@ -172,11 +221,11 @@ const server = http.createServer(async (req, res) => {
         reqId,
         path: u.pathname,
         responseFormat,
-        bytesPcm: result.pcm.length,
+        bytesPcm: result.pcm?.length ?? null,
         bytesOut: audio.body.length,
         timings: {
           ...result.timings,
-          encodeMs: tEnc1 - tEnc0
+          encodeMs: audio.encodeMs
         },
         totalMs: Date.now() - startedAt
       }));
