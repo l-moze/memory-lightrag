@@ -4,6 +4,8 @@ import { buildDomainContext, deriveRequestDomain, toWorkspace } from "./policy/d
 import type { MemoryDomain } from "./policy/domain-routing.js";
 import { enforceWorkspace, resolveAllowedWorkspaces } from "./policy/access.js";
 import { isAllowedByDomain } from "./policy/source-tag.js";
+import { detectQueryIntent } from "./policy/query-intent.js";
+import { getRerankWeights } from "./policy/rerank-policy.js";
 
 const buildPromptSection = ({ availableTools, citationsMode }: any) => {
   const hasMemorySearch = availableTools.has("memory_search");
@@ -39,6 +41,15 @@ function toResultText(item: unknown): string {
 
 function toSourceTag(source: any): string {
   return String(source?.uri || source?.metadata?.filePath || source?.id || "");
+}
+
+function buildOntologyPolicy(query: string | undefined) {
+  if (!query) return undefined;
+  const intent = detectQueryIntent(query);
+  return {
+    intent,
+    rerankWeights: getRerankWeights(intent),
+  };
 }
 
 function buildOntologyDetails(graph: any, domainCtx: any, domain: MemoryDomain) {
@@ -197,6 +208,7 @@ export default {
                     domain: decision.domain,
                     workspace: enforced.fallbackWorkspace || requestedWorkspace,
                     reasonCode: decision.reasonCode,
+                    ontologyPolicy: buildOntologyPolicy(query),
                   },
                 };
               }
@@ -225,6 +237,7 @@ export default {
                   resultCount: filtered.length,
                   redaction: "details.results_omitted",
                   ontology: buildOntologyDetails(lr.graph, domainCtx, decision.domain),
+                  ontologyPolicy: buildOntologyPolicy(query),
                 };
                 api.logger.info("memory-lightrag search", details as any);
                 return {
@@ -246,6 +259,7 @@ export default {
                   workspace: enforced.workspace,
                   reasonCode: decision.reasonCode,
                   ontology: buildOntologyDetails(lr.graph, domainCtx, decision.domain),
+                  ontologyPolicy: buildOntologyPolicy(query),
                 };
                 api.logger.warn("memory-lightrag fallback", details);
 
@@ -269,6 +283,7 @@ export default {
                 workspace: enforced.workspace,
                 reasonCode: decision.reasonCode,
                 ontology: buildOntologyDetails(lr.graph, domainCtx, decision.domain),
+                ontologyPolicy: buildOntologyPolicy(query),
               };
               api.logger.info("memory-lightrag empty", details);
               return { content: [], details };
