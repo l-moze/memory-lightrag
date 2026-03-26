@@ -8,12 +8,17 @@ import { scoreIntentFeatures, type IntentScoreResult } from "./intent-scorer.ts"
 
 export type QueryIntent = "WHY" | "WHEN" | "ENTITY" | "GENERAL";
 
-interface IntentThresholds {
+export interface IntentThresholds {
   minTopScore: number;
   minMargin: number;
 }
 
-const DEFAULT_THRESHOLDS: IntentThresholds = {
+export interface IntentDetectionOptions {
+  scoredRoutingEnabled?: boolean;
+  thresholds?: Partial<IntentThresholds>;
+}
+
+export const DEFAULT_THRESHOLDS: IntentThresholds = {
   minTopScore: 0.9,
   minMargin: 0.35,
 };
@@ -47,7 +52,17 @@ function decideByScore(result: IntentScoreResult, thresholds: IntentThresholds):
   return result.topIntent;
 }
 
-export function detectQueryIntentDetailed(query: string): IntentScoreResult & { intent: QueryIntent } {
+function resolveThresholds(options?: IntentDetectionOptions): IntentThresholds {
+  return {
+    minTopScore: options?.thresholds?.minTopScore ?? DEFAULT_THRESHOLDS.minTopScore,
+    minMargin: options?.thresholds?.minMargin ?? DEFAULT_THRESHOLDS.minMargin,
+  };
+}
+
+export function detectQueryIntentDetailed(
+  query: string,
+  options?: IntentDetectionOptions,
+): IntentScoreResult & { intent: QueryIntent } {
   if (typeof query !== "string") {
     const emptyScore = scoreIntentFeatures(extractIntentFeatures(""));
     return { ...emptyScore, intent: "GENERAL" };
@@ -83,9 +98,13 @@ export function detectQueryIntentDetailed(query: string): IntentScoreResult & { 
   }
 
   const scored = scoreIntentFeatures(features);
-  return { ...scored, intent: decideByScore(scored, DEFAULT_THRESHOLDS) };
+  if (options?.scoredRoutingEnabled === false) {
+    return { ...scored, intent: scored.topIntent };
+  }
+
+  return { ...scored, intent: decideByScore(scored, resolveThresholds(options)) };
 }
 
-export function detectQueryIntent(query: string): QueryIntent {
-  return detectQueryIntentDetailed(query).intent;
+export function detectQueryIntent(query: string, options?: IntentDetectionOptions): QueryIntent {
+  return detectQueryIntentDetailed(query, options).intent;
 }

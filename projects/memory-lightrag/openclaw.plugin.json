@@ -1,0 +1,36 @@
+{
+  "id": "memory-lightrag",
+  "kind": "memory",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "lightrag": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "baseUrl": { "type": "string" },
+          "apiKey": { "type": "string" },
+          "timeout": { "type": "number" }
+        }
+      },
+      "fallbackEnabled": { "type": "boolean" },
+      "verbose": { "type": "boolean" },
+      "intent": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "scoredRouting": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "enabled": { "type": "boolean" },
+              "minTopScore": { "type": "number" },
+              "minMargin": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

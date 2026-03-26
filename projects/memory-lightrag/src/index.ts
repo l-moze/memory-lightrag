@@ -43,12 +43,26 @@ function toSourceTag(source: any): string {
   return String(source?.uri || source?.metadata?.filePath || source?.id || "");
 }
 
-function buildOntologyPolicy(query: string | undefined) {
+function buildOntologyPolicy(query: string | undefined, config?: any) {
   if (!query) return undefined;
-  const intent = detectQueryIntent(query);
+
+  const scoredCfg = config?.intent?.scoredRouting;
+  const intent = detectQueryIntent(query, {
+    scoredRoutingEnabled: scoredCfg?.enabled,
+    thresholds: {
+      minTopScore: scoredCfg?.minTopScore,
+      minMargin: scoredCfg?.minMargin,
+    },
+  });
+
   return {
     intent,
     rerankWeights: getRerankWeights(intent),
+    scoredRouting: {
+      enabled: scoredCfg?.enabled ?? true,
+      minTopScore: scoredCfg?.minTopScore ?? 0.9,
+      minMargin: scoredCfg?.minMargin ?? 0.35,
+    },
   };
 }
 
@@ -208,7 +222,7 @@ export default {
                     domain: decision.domain,
                     workspace: enforced.fallbackWorkspace || requestedWorkspace,
                     reasonCode: decision.reasonCode,
-                    ontologyPolicy: buildOntologyPolicy(query),
+                    ontologyPolicy: buildOntologyPolicy(query, config),
                   },
                 };
               }
@@ -237,7 +251,7 @@ export default {
                   resultCount: filtered.length,
                   redaction: "details.results_omitted",
                   ontology: buildOntologyDetails(lr.graph, domainCtx, decision.domain),
-                  ontologyPolicy: buildOntologyPolicy(query),
+                  ontologyPolicy: buildOntologyPolicy(query, config),
                 };
                 api.logger.info("memory-lightrag search", details as any);
                 return {
@@ -259,7 +273,7 @@ export default {
                   workspace: enforced.workspace,
                   reasonCode: decision.reasonCode,
                   ontology: buildOntologyDetails(lr.graph, domainCtx, decision.domain),
-                  ontologyPolicy: buildOntologyPolicy(query),
+                  ontologyPolicy: buildOntologyPolicy(query, config),
                 };
                 api.logger.warn("memory-lightrag fallback", details);
 
@@ -283,7 +297,7 @@ export default {
                 workspace: enforced.workspace,
                 reasonCode: decision.reasonCode,
                 ontology: buildOntologyDetails(lr.graph, domainCtx, decision.domain),
-                ontologyPolicy: buildOntologyPolicy(query),
+                ontologyPolicy: buildOntologyPolicy(query, config),
               };
               api.logger.info("memory-lightrag empty", details);
               return { content: [], details };
