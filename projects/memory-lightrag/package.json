@@ -1,0 +1,16 @@
+{
+  "name": "memory-lightrag",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "description": "OpenClaw memory plugin with LightRAG-backed search + builtin fallback",
+  "main": "src/index.ts",
+  "scripts": {
+    "verify:intent-rerank": "node --experimental-strip-types test/intent-rerank.verify.mjs"
+  },
+  "openclaw": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  }
+}
