@@ -193,6 +193,14 @@ export default {
                   ? (params as any).q
                   : "";
 
+            const attachVerboseDetails = (response: any, details: any) => {
+              const out = { ...(response || {}), details };
+              if (!config?.verbose) return out;
+              const content = Array.isArray(out.content) ? [...out.content] : [];
+              content.push({ type: "text", text: JSON.stringify({ details }) });
+              return { ...out, content };
+            };
+
             if (lightragAdapter && query) {
               const domainCtx = buildDomainContext(ctx.sessionKey || "");
               const decision = deriveRequestDomain(domainCtx);
@@ -265,10 +273,13 @@ export default {
                   ontologyPolicy: buildOntologyPolicy(query, config),
                 };
                 api.logger.info("memory-lightrag search", details as any);
-                return {
-                  content: filtered.slice(0, 8).map((r) => ({ type: "text", text: toResultText(r) })),
+                return attachVerboseDetails(
+                  {
+                    content: filtered.slice(0, 8).map((r) => ({ type: "text", text: toResultText(r) })),
+                    details,
+                  },
                   details,
-                };
+                );
               }
 
               if (fallbackEnabled) {
@@ -288,13 +299,19 @@ export default {
                 };
                 api.logger.warn("memory-lightrag fallback", details);
 
-                return {
-                  ...(built as any),
-                  details: {
+                return attachVerboseDetails(
+                  {
+                    ...(built as any),
+                    details: {
+                      ...((built as any)?.details || {}),
+                      ...details,
+                    },
+                  },
+                  {
                     ...((built as any)?.details || {}),
                     ...details,
                   },
-                };
+                );
               }
 
               const details = {
