@@ -1,0 +1,2 @@
+2026-03-25T13:24:45.737Z {"event":"deny","error":{"code":"DOMAIN_WORKSPACE_DENY","message":"Workspace u_x is not allowed for domain group","domain":"group","requestedWorkspace":"u_x","allowedWorkspaces":["g_g1","global_shared"],"downgradeToSharedAllowed":false}}
+2026-03-25T13:26:48.312Z {"event":"deny","error":{"code":"DOMAIN_WORKSPACE_DENY","message":"Workspace u_victim is not allowed for domain group","domain":"group","requestedWorkspace":"u_victim","allowedWorkspaces":["g_demo_group","global_shared"],"downgradeToSharedAllowed":false}}

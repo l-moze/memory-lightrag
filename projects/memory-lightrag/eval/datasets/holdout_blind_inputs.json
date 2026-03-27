@@ -1,82 +1,122 @@
 [
   {
-    "id": "Q001",
-    "query": "为什么昨天的 memory sync 失败了？"
+    "id": "Q052",
+    "query": "导致这次延迟抖动的主要因素是什么"
   },
   {
-    "id": "Q002",
-    "query": "why did the retrieval latency spike after deploy"
+    "id": "Q053",
+    "query": "why did token usage jump after policy update"
   },
   {
-    "id": "Q003",
-    "query": "这次上下文丢失的根因是什么"
+    "id": "Q054",
+    "query": "这波误召回是因为什么触发的"
   },
   {
-    "id": "Q004",
-    "query": "reason for duplicate chunks in index?"
+    "id": "Q055",
+    "query": "what is the underlying cause of cache thrashing"
   },
   {
-    "id": "Q005",
-    "query": "为啥那天 agent thread 没有继续执行"
+    "id": "Q056",
+    "query": "为什么用户问同样问题却得到不同答案"
   },
   {
-    "id": "Q012",
-    "query": "这个问题是什么时候第一次被记录的"
+    "id": "Q057",
+    "query": "what caused the ontology merge conflict to appear"
   },
   {
-    "id": "Q013",
-    "query": "when did we enable hybrid search"
+    "id": "Q065",
+    "query": "那次内存回收异常持续到什么时候"
   },
   {
-    "id": "Q014",
-    "query": "上次回滚发生在几点"
+    "id": "Q066",
+    "query": "when exactly did the canary rollback finish"
   },
   {
-    "id": "Q015",
-    "query": "timeline of the outage last Friday"
+    "id": "Q067",
+    "query": "最近一次配置变更发生在什么时间"
   },
   {
-    "id": "Q016",
-    "query": "发布前后检索质量变化是在哪天开始的"
+    "id": "Q068",
+    "query": "after the hotfix, when did success rate cross 99%"
   },
   {
-    "id": "Q023",
-    "query": "谁负责 memory-lightrag 的索引构建"
+    "id": "Q069",
+    "query": "这段日志对应的是哪天晚上"
   },
   {
-    "id": "Q024",
-    "query": "which team owns the rerank policy"
+    "id": "Q070",
+    "query": "when did the incident bridge channel open"
   },
   {
-    "id": "Q025",
-    "query": "这个 issue 对应的项目是哪个"
+    "id": "Q078",
+    "query": "which service owns vector index compaction"
   },
   {
-    "id": "Q026",
-    "query": "where is the postmortem doc stored"
+    "id": "Q079",
+    "query": "这个告警规则归哪个团队维护"
   },
   {
-    "id": "Q027",
-    "query": "who approved the model switch"
+    "id": "Q080",
+    "query": "where is the runbook for degraded mode"
   },
   {
-    "id": "Q034",
-    "query": "总结一下最近一周 memory recall 的变化"
+    "id": "Q081",
+    "query": "谁审批了本周的阈值调整"
   },
   {
-    "id": "Q035",
-    "query": "give me a concise recap of yesterday's debugging notes"
+    "id": "Q082",
+    "query": "which file defines domain routing defaults"
   },
   {
-    "id": "Q036",
-    "query": "帮我整理一下这个项目的复盘要点"
+    "id": "Q083",
+    "query": "这个项目现在的 tech lead 是谁"
   },
   {
-    "id": "Q037",
-    "query": "列出最值得关注的三条进展"
+    "id": "Q109",
+    "query": "输出一个高层次进度说明，适合周会口播"
   },
   {
-    "id": "Q038",
-    "query": "summarize key decisions from the last sync"
+    "id": "Q110",
+    "query": "generate a concise end-of-day report from notes"
+  },
+  {
+    "id": "Q111",
+    "query": "给我一版偏业务视角的总结"
+  },
+  {
+    "id": "Q112",
+    "query": "combine recent updates into one coherent brief"
+  },
+  {
+    "id": "Q113",
+    "query": "提取本周最值得复盘的三个点"
+  },
+  {
+    "id": "Q114",
+    "query": "prepare a short handover summary for the next shift"
+  },
+  {
+    "id": "Q115",
+    "query": "把最近 issue 讨论整理成结论和行动项"
+  },
+  {
+    "id": "Q116",
+    "query": "create a top-level narrative of what happened and why it matters"
+  },
+  {
+    "id": "Q117",
+    "query": "请按轻重缓急概述当前问题盘面"
+  },
+  {
+    "id": "Q118",
+    "query": "share a quick digest of progress, blockers, and asks"
+  },
+  {
+    "id": "Q119",
+    "query": "写一个简洁版本，告诉我现在到哪一步了"
+  },
+  {
+    "id": "Q120",
+    "query": "把最近的信息合并成一段清晰摘要"
   }
 ]
