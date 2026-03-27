@@ -25,6 +25,7 @@
             "additionalProperties": true,
             "properties": {
               "enabled": { "type": "boolean" },
+              "profile": { "type": "string", "enum": ["strict", "default", "recall"] },
               "minTopScore": { "type": "number" },
               "minMargin": { "type": "number" }
             }

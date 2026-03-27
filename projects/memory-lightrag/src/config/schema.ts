@@ -20,6 +20,7 @@ export interface AccessConfig {
 
 export interface IntentScoredRoutingConfig {
   enabled?: boolean;
+  profile?: "strict" | "default" | "recall";
   minTopScore?: number;
   minMargin?: number;
 }
@@ -77,6 +78,7 @@ export const MemoryLightragConfigSchema = {
           additionalProperties: true,
           properties: {
             enabled: { type: "boolean", default: true },
+            profile: { type: "string", enum: ["strict", "default", "recall"], default: "default" },
             minTopScore: { type: "number", default: 0.9 },
             minMargin: { type: "number", default: 0.35 },
           },

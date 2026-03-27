@@ -4,7 +4,7 @@ import { buildDomainContext, deriveRequestDomain, toWorkspace } from "./policy/d
 import type { MemoryDomain } from "./policy/domain-routing.js";
 import { enforceWorkspace, resolveAllowedWorkspaces } from "./policy/access.js";
 import { isAllowedByDomain } from "./policy/source-tag.js";
-import { detectQueryIntent } from "./policy/query-intent.js";
+import { detectQueryIntentDetailed } from "./policy/query-intent.js";
 import { getRerankWeights } from "./policy/rerank-policy.js";
 
 const buildPromptSection = ({ availableTools, citationsMode }: any) => {
@@ -47,8 +47,9 @@ function buildOntologyPolicy(query: string | undefined, config?: any) {
   if (!query) return undefined;
 
   const scoredCfg = config?.intent?.scoredRouting;
-  const intent = detectQueryIntent(query, {
+  const detailed = detectQueryIntentDetailed(query, {
     scoredRoutingEnabled: scoredCfg?.enabled,
+    profile: scoredCfg?.profile,
     thresholds: {
       minTopScore: scoredCfg?.minTopScore,
       minMargin: scoredCfg?.minMargin,
@@ -56,12 +57,22 @@ function buildOntologyPolicy(query: string | undefined, config?: any) {
   });
 
   return {
-    intent,
-    rerankWeights: getRerankWeights(intent),
+    intent: detailed.intent,
+    rerankWeights: getRerankWeights(detailed.intent),
     scoredRouting: {
       enabled: scoredCfg?.enabled ?? true,
-      minTopScore: scoredCfg?.minTopScore ?? 0.9,
-      minMargin: scoredCfg?.minMargin ?? 0.35,
+      profile: detailed.telemetry.profile,
+      minTopScore: detailed.telemetry.thresholds.minTopScore,
+      minMargin: detailed.telemetry.thresholds.minMargin,
+    },
+    telemetry: {
+      routeMode: detailed.telemetry.routeMode,
+      decisionReason: detailed.telemetry.decisionReason,
+      topIntent: detailed.topIntent,
+      topScore: Number(detailed.topScore.toFixed(4)),
+      secondScore: Number(detailed.secondScore.toFixed(4)),
+      margin: Number(detailed.margin.toFixed(4)),
+      lowMargin: detailed.margin < detailed.telemetry.thresholds.minMargin,
     },
   };
 }
