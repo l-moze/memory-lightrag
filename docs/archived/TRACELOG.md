@@ -17,3 +17,7 @@
 - Action: Ran `openclaw plugins inspect memory-lightrag --json` and `openclaw memory status --json`; captured results in docs/EVIDENCE_RUN_20260327_GATECHECK.md.
 - Result: Gate #1 PASS; Gates #2-#3 still pending dedicated verification; no blockers beyond missing scenarios.
 - Next: Execute success/fallback path tests plus duplicate-diagnostic sweep, then update evidence.
+## 2026-03-27 14:14 UTC - Gate2 PASS via CLI deep
+- Evidence: docs/archived/EVIDENCE_RUN_20260327T141158Z_GATE2_CLI_DEEP_RETRY2.md
+- Result: embeddingProbe ok, memory search returns results
+- Gate2: PASS (details path validated via CLI deep)
