@@ -1,4 +1,3 @@
-
 ## 2026-03-25 02:53 UTC - Kickoff for continuous delivery
 - Goal: continue推进 memory-engine-plugin（memory-lightrag）并建立可动态追溯 + 定时汇报机制。
 - Constraints: 不重启 gateway；先调研后改动；每次改动附证据。
@@ -14,3 +13,7 @@
 - Scope: docs-only alignment; no runtime logic change.
 - Next: run one non-contended E2E visibility recheck and append evidence.
 
+## 2026-03-27 03:54 UTC - Gatecheck evidence refreshed
+- Action: Ran `openclaw plugins inspect memory-lightrag --json` and `openclaw memory status --json`; captured results in docs/EVIDENCE_RUN_20260327_GATECHECK.md.
+- Result: Gate #1 PASS; Gates #2-#3 still pending dedicated verification; no blockers beyond missing scenarios.
+- Next: Execute success/fallback path tests plus duplicate-diagnostic sweep, then update evidence.

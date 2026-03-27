@@ -1,0 +1,28 @@
+[UTC] 2026-03-25 02:50:47
+[CST] 2026-03-25 10:50:47
+
+$ openclaw plugins inspect memory-lightrag --json | head -c 500
+[35m[plugins][39m [36mmodel-config-admin: routes registered[39m
+[35m[plugins][39m [36mfeishu_doc: Registered feishu_doc, feishu_app_scopes[39m
+[35m[plugins][39m [36mfeishu_chat: Registered feishu_chat tool[39m
+[35m[plugins][39m [36mfeishu_wiki: Registered feishu_wiki tool[39m
+[35m[plugins][39m [36mfeishu_drive: Registered feishu_drive tool[39m
+[35m[plugins][39m [36mfeishu_perm: Registered feishu_perm tool[39m
+[35m[plugins][39m [36mfeishu_bitable: Registered bitable too
+
+$ curl -X POST /documents/text  (token=MANUAL_PROOF_1774407056)
+{"status":"success","message":"Text successfully received. Processing will continue in background.","track_id":"insert_20260325_025056_727bcc09"}
+
+$ curl -X POST /query/data (same token)
+token_hit=yes
+{"status":"success","message":"Query processed successfully","data":{"entities":[{"entity_name":"OC_MEM_TEST_1774372194","entity_type":"artifact","description":"OC_MEM_TEST_1774372194是一个标识符形式的工件，出自openclaw integration。","source_id
+
+$ openclaw memory search --agent director --query "memory-lightrag" --max-results 3 --json | head -c 500
+{
+  "results": [
+    {
+      "path": "memory/2026-03-24.md",
+      "startLine": 6,
+      "endLine": 12,
+      "score": 0.6846039086299831,
+      "snippet": "- For memory-lightrag direction, user explicitly chose LightRAG **sidecar service** architecture (not embedding LightRAG core/Python into OpenClaw main container), with automatic fallback requirement and explicit observability.\n- Research checkpoints accepted: fallback choice A (runtime builtin fallback, no memory-core plugin enable), prove
