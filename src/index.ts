@@ -4,7 +4,7 @@ import { buildDomainContext, deriveRequestDomain, toWorkspace } from "./policy/d
 import type { MemoryDomain } from "./policy/domain-routing.js";
 import { enforceWorkspace, resolveAllowedWorkspaces } from "./policy/access.js";
 import { isAllowedByDomain } from "./policy/source-tag.js";
-import { detectQueryIntentDetailed } from "./policy/query-intent.js";
+import { runIntentRouting } from "./policy/intent-routing.ts";
 import { getRerankWeights } from "./policy/rerank-policy.js";
 
 const buildPromptSection = ({ availableTools, citationsMode }: any) => {
@@ -47,7 +47,7 @@ function buildOntologyPolicy(query: string | undefined, config?: any) {
   if (!query) return undefined;
 
   const scoredCfg = config?.intent?.scoredRouting;
-  const detailed = detectQueryIntentDetailed(query, {
+  const detailed = runIntentRouting(query, {
     scoredRoutingEnabled: scoredCfg?.enabled,
     profile: scoredCfg?.profile,
     thresholds: {
