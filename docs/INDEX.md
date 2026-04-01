@@ -1,6 +1,10 @@
 # Documentation Index (memory-lightrag)
 
 ## 0. Quick entry points
+- **Strategy upgrade (2026-04-01)**: [GRAPH_MEMORY_STRATEGY_UPGRADE_2026-04-01](GRAPH_MEMORY_STRATEGY_UPGRADE_2026-04-01.md)
+- **Graph memory evaluation plan**: [GRAPH_MEMORY_EVAL_PLAN_2026-04-01](GRAPH_MEMORY_EVAL_PLAN_2026-04-01.md)
+- **Graph memory core architecture**: [GRAPH_MEMORY_CORE_ARCHITECTURE_2026-04-01](GRAPH_MEMORY_CORE_ARCHITECTURE_2026-04-01.md)
+- **Graph memory schema vNext**: [GRAPH_MEMORY_SCHEMA_VNEXT](GRAPH_MEMORY_SCHEMA_VNEXT.md)
 - **Release ready status**: [RELEASE_READY_STATUS_2026-03-27](RELEASE_READY_STATUS_2026-03-27.md)
 - **Release checklist**: [RELEASE_CHECKLIST](RELEASE_CHECKLIST.md)
 - **Final alignment package**: [FINAL_ALIGNMENT_PACKAGE_2026-03-27](FINAL_ALIGNMENT_PACKAGE_2026-03-27.md)

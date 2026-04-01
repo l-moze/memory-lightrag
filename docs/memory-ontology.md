@@ -303,3 +303,40 @@ This ontology provides exactly the fields needed to:
 - deduplicate entity-centric memory,
 - support future graph-based reranking,
 while preserving current text-first behavior and avoiding over-modeling in v1.
+
+---
+
+## vNext Direction: Memory Object Layer
+
+The schema above is sufficient for retrieval payloads, but it is not yet sufficient for a graph-native memory system.
+
+To support graph memory lifecycle, add a second semantic layer above retrieval payloads:
+
+- `Episode`
+- `Decision`
+- `Preference`
+- `Commitment`
+- `Incident`
+- `Source`
+
+This layer should answer:
+
+1. what happened
+2. who/what it was about
+3. whether it supersedes or contradicts prior memory
+4. what source/provenance justifies it
+
+Design rule:
+
+- keep `MemorySearchItem` as the retrieval contract
+- add memory object semantics as a separate write-path contract
+- do not overload retrieval payload fields to carry all lifecycle meaning
+
+Rationale:
+
+- LightRAG is strong at graph-backed retrieval and storage
+- the project still needs its own memory semantics for lifecycle, revocation, and conflict handling
+
+Reference docs:
+- [GRAPH_MEMORY_STRATEGY_UPGRADE_2026-04-01](GRAPH_MEMORY_STRATEGY_UPGRADE_2026-04-01.md)
+- [GRAPH_MEMORY_EVAL_PLAN_2026-04-01](GRAPH_MEMORY_EVAL_PLAN_2026-04-01.md)
